@@ -132,6 +132,29 @@ export default function Dashboard() {
     if (busy) return;
     setBusy(true);
     try {
+      // Special handling for WALLET task — trigger real wallet link flow
+      if (task.platform === "WALLET" && task.status !== "completed") {
+        try {
+          const { walletLink } = await import("../lib/wallet");
+          const linkRes = await walletLink();
+          if (linkRes.reward_lp > 0) {
+            toast.success(`WALLET LINKED — +${linkRes.reward_lp} LP`);
+          }
+          // Also mark this task as completed (separate from the +250 LP from link)
+          try {
+            const { data } = await api.post(`/tasks/${task.id}/complete`);
+            toast.success(`+${data.reward_lp} LP — TASK COMPLETE`);
+          } catch { /* task may already be complete */ }
+          await loadAll();
+          await refreshUser();
+        } catch (e) {
+          const msg = e.response?.data?.detail || e.message || "Wallet connection failed";
+          if (e.code === 4001 || /user rejected/i.test(msg)) toast.error("SIGNATURE CANCELLED");
+          else toast.error(typeof msg === "string" ? msg.toUpperCase() : "WALLET ERROR");
+        } finally { setBusy(false); }
+        return;
+      }
+
       if (task.status === "available") {
         await api.post(`/tasks/${task.id}/start`);
         if (task.external_url && task.external_url !== "#") {

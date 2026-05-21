@@ -1,7 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LogOut, User, Wallet } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { truncateAddress } from "../lib/wallet";
+import WalletButton from "./WalletButton";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -57,7 +59,20 @@ export default function Navbar() {
             <ChevronDown size={14} className="text-[var(--muted)] group-hover:text-white transition" />
           </button>
           {open && (
-            <div className="absolute right-0 top-full mt-2 w-56 card-ll p-2 fade-in-up" data-testid="profile-dropdown">
+            <div className="absolute right-0 top-full mt-2 w-72 card-ll p-2 fade-in-up" data-testid="profile-dropdown">
+              <div className="px-3 py-2 border-b border-[var(--border)] mb-1">
+                <div className="font-pixel text-[10px] tracking-widest text-white">@{user?.username}</div>
+                {user?.wallet_address ? (
+                  <div className="font-pixel text-[9px] tracking-widest text-[var(--purple-bright)] flex items-center gap-1 mt-1" data-testid="wallet-address">
+                    <Wallet size={10} />
+                    {truncateAddress(user.wallet_address)}
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    <WalletButton variant="link" />
+                  </div>
+                )}
+              </div>
               <button onClick={() => { setOpen(false); navigate("/tasks"); }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left text-white/90 hover:bg-[var(--bg-card-2)] rounded font-pixel text-[10px] tracking-widest" data-testid="dropdown-profile">
                 <User size={14} /> RIDER GARAGE

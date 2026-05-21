@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import WalletButton from "../components/WalletButton";
 
 export default function Login() {
   const { login } = useAuth();
@@ -51,6 +52,14 @@ export default function Login() {
           <button disabled={loading} className="btn-primary-ll w-full py-3 text-[12px]" data-testid="login-submit">
             {loading ? "STARTING..." : "ENTER THE TRACK"}
           </button>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="flex-1 h-px bg-[var(--border)]" />
+            <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)]">OR</div>
+            <div className="flex-1 h-px bg-[var(--border)]" />
+          </div>
+
+          <WalletButton variant="signin" />
 
           <div className="mt-6 font-pixel text-[10px] tracking-widest text-[var(--muted)] text-center">
             NEW RIDER? <Link to="/register" className="text-[var(--purple-bright)]" data-testid="link-register">JOIN THE GRID</Link>

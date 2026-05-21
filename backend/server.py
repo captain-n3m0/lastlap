@@ -213,6 +213,169 @@ async def logout():
     return {"ok": True}
 
 
+# --- Wallet Auth (SIWE-style for EVM) ---
+from eth_account.messages import encode_defunct
+from eth_account import Account
+
+
+class WalletNonceIn(BaseModel):
+    address: str = Field(min_length=42, max_length=42)
+
+
+class WalletVerifyIn(BaseModel):
+    message: str
+    signature: str
+    address: str
+    chain_id: int = 1
+
+
+def _normalize_addr(addr: str) -> str:
+    a = addr.strip().lower()
+    if not a.startswith("0x") or len(a) != 42:
+        raise HTTPException(status_code=400, detail="Invalid wallet address")
+    return a
+
+
+def _recover_signer(message: str, signature: str) -> str:
+    try:
+        signable = encode_defunct(text=message)
+        recovered = Account.recover_message(signable, signature=signature)
+        return recovered.lower()
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+
+@api_router.post("/auth/wallet/nonce")
+async def wallet_nonce(data: WalletNonceIn):
+    address = _normalize_addr(data.address)
+    nonce = uuid.uuid4().hex[:16]
+    await db.wallet_nonces.insert_one({
+        "address": address,
+        "nonce": nonce,
+        "used": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"nonce": nonce, "address": address}
+
+
+@api_router.post("/auth/wallet/verify", response_model=TokenOut)
+async def wallet_verify(data: WalletVerifyIn):
+    address = _normalize_addr(data.address)
+    # Recover signer
+    recovered = _recover_signer(data.message, data.signature)
+    if recovered != address:
+        raise HTTPException(status_code=401, detail="Signature does not match address")
+
+    # Extract nonce from message (line "Nonce: <nonce>")
+    nonce_val = None
+    for line in data.message.splitlines():
+        if line.lower().startswith("nonce:"):
+            nonce_val = line.split(":", 1)[1].strip()
+            break
+    if not nonce_val:
+        raise HTTPException(status_code=400, detail="Nonce missing in message")
+
+    # Check nonce exists & is unused
+    nonce_doc = await db.wallet_nonces.find_one({"address": address, "nonce": nonce_val, "used": False})
+    if not nonce_doc:
+        raise HTTPException(status_code=400, detail="Invalid or used nonce")
+    await db.wallet_nonces.update_one(
+        {"_id": nonce_doc["_id"]},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    # Find or create user
+    user = await db.users.find_one({"wallet_address": address}, {"_id": 0})
+    if not user:
+        # Create wallet-only user
+        avatar_colors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#EC4899"]
+        while True:
+            code = gen_referral_code()
+            if not await db.users.find_one({"referral_code": code}):
+                break
+        # Generate a username from address (must be unique)
+        base_username = f"rider_{address[2:8]}"
+        username = base_username
+        i = 0
+        while await db.users.find_one({"username": username}):
+            i += 1
+            username = f"{base_username}_{i}"
+        user_id = str(uuid.uuid4())
+        user = {
+            "id": user_id,
+            "email": None,
+            "username": username,
+            "password_hash": None,
+            "display_name": username,
+            "role": "ROOKIE RIDER",
+            "title": "ROOKIE RACER",
+            "lap_points": 0,
+            "tasks_completed": 0,
+            "daily_streak": 0,
+            "referral_code": code,
+            "referred_by": None,
+            "avatar_color": random.choice(avatar_colors),
+            "wallet_address": address,
+            "wallet_chain_id": data.chain_id,
+            "joined_on": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(user)
+
+    token = create_token(user["id"], user.get("email") or address)
+    return TokenOut(access_token=token, user=sanitize_user(user))
+
+
+@api_router.post("/auth/wallet/link")
+async def wallet_link(data: WalletVerifyIn, current=Depends(get_current_user)):
+    """Link a wallet to the currently logged-in (email) user."""
+    address = _normalize_addr(data.address)
+    recovered = _recover_signer(data.message, data.signature)
+    if recovered != address:
+        raise HTTPException(status_code=401, detail="Signature does not match address")
+
+    # Nonce check
+    nonce_val = None
+    for line in data.message.splitlines():
+        if line.lower().startswith("nonce:"):
+            nonce_val = line.split(":", 1)[1].strip()
+            break
+    if not nonce_val:
+        raise HTTPException(status_code=400, detail="Nonce missing")
+    nonce_doc = await db.wallet_nonces.find_one({"address": address, "nonce": nonce_val, "used": False})
+    if not nonce_doc:
+        raise HTTPException(status_code=400, detail="Invalid or used nonce")
+    await db.wallet_nonces.update_one(
+        {"_id": nonce_doc["_id"]},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    # Check wallet is not already linked to another user
+    existing = await db.users.find_one({"wallet_address": address})
+    if existing and existing["id"] != current["id"]:
+        raise HTTPException(status_code=400, detail="Wallet already linked to another account")
+
+    await db.users.update_one(
+        {"id": current["id"]},
+        {"$set": {"wallet_address": address, "wallet_chain_id": data.chain_id}},
+    )
+    # Reward 250 LP for completing the "Connect Wallet" task — only first time
+    if not current.get("wallet_address"):
+        await db.users.update_one({"id": current["id"]}, {"$inc": {"lap_points": 250}})
+
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0, "password_hash": 0})
+    return {"ok": True, "user": sanitize_user(user), "reward_lp": 250 if not current.get("wallet_address") else 0}
+
+
+@api_router.post("/auth/wallet/unlink")
+async def wallet_unlink(current=Depends(get_current_user)):
+    """Unlink wallet from the current user. Refuses if user has no email/password (would be locked out)."""
+    if not current.get("email") or not current.get("password_hash"):
+        raise HTTPException(status_code=400, detail="Cannot unlink wallet from a wallet-only account")
+    await db.users.update_one({"id": current["id"]}, {"$unset": {"wallet_address": "", "wallet_chain_id": ""}})
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0, "password_hash": 0})
+    return {"ok": True, "user": sanitize_user(user)}
+
+
 # --- Tasks ---
 @api_router.get("/tasks")
 async def list_tasks(current=Depends(get_current_user)):
@@ -431,11 +594,18 @@ async def seed():
         logger.info("Seeded %d tasks", len(DEMO_TASKS))
 
     # Indexes
-    await db.users.create_index("email", unique=True)
+    # Indexes (sparse for nullable fields like email & wallet_address)
+    try:
+        await db.users.drop_index("email_1")
+    except Exception:
+        pass
+    await db.users.create_index("email", unique=True, sparse=True)
     await db.users.create_index("username", unique=True)
     await db.users.create_index("referral_code", unique=True)
+    await db.users.create_index("wallet_address", unique=True, sparse=True)
     await db.tasks.create_index("id", unique=True)
     await db.user_tasks.create_index([("user_id", 1), ("task_id", 1)], unique=True)
+    await db.wallet_nonces.create_index("nonce")
 
     # Demo user (riderghost)
     demo_email = os.environ.get("DEMO_EMAIL", "riderghost@lastlap.com")
