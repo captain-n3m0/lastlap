@@ -179,8 +179,21 @@ export default function Dashboard() {
 
       {/* HERO */}
       <section className="relative max-w-[1400px] mx-auto px-6 lg:px-10 pt-10 pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <div className="fade-in-up">
+        <div className="relative rounded-lg overflow-hidden border border-[var(--border)] min-h-[360px] md:min-h-[440px]">
+          {/* Background artwork with fade */}
+          <img
+            src="https://customer-assets.emergentagent.com/job_pit-stop-6/artifacts/g5usbfpl_art_1.png"
+            alt="LastLap riders on Route 66"
+            className="absolute inset-0 w-full h-full object-cover"
+            data-testid="hero-artwork"
+          />
+          {/* Left-to-right dark fade so the title is readable */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg)] via-[var(--bg)]/85 via-40% to-transparent" />
+          {/* Subtle bottom fade into stat cards */}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[var(--bg)] to-transparent" />
+
+          {/* Foreground content */}
+          <div className="relative z-10 px-6 md:px-10 py-10 md:py-14 max-w-[680px] fade-in-up">
             <h1 className="font-brush text-[64px] md:text-[88px] leading-[0.95] mb-5" data-testid="hero-title">
               <span className="text-white">RACER </span>
               <span className="text-[var(--purple)]">HUB</span>
@@ -188,14 +201,6 @@ export default function Dashboard() {
             <div className="font-mono-crt text-[20px] text-[var(--muted)] max-w-md">
               COMPLETE MISSIONS, EARN LAP POINTS,<br/>AND CLIMB THE GLOBAL GRID
             </div>
-          </div>
-          <div className="relative h-[280px] md:h-[360px] rounded-lg overflow-hidden border border-[var(--border)]">
-            <img
-              src="https://customer-assets.emergentagent.com/job_pit-stop-6/artifacts/g5usbfpl_art_1.png"
-              alt="LastLap riders on Route 66"
-              className="w-full h-full object-cover"
-              data-testid="hero-artwork"
-            />
           </div>
         </div>
       </section>
