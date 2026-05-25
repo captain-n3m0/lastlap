@@ -23,8 +23,8 @@ function Stat({ icon: Icon, value, label, color }) {
 function FeaturePill({ icon: Icon, title, subtitle }) {
   return (
     <div className="flex-1 flex flex-col items-center text-center gap-2">
-      <div className="h-12 w-12 flex items-center justify-center">
-        <Icon size={44} />
+      <div className="h-14 w-14 flex items-center justify-center">
+        <Icon size={48} />
       </div>
       <div className="font-pixel text-[10px] tracking-widest text-white mt-1">{title}</div>
       <div className="font-mono-crt text-[11px] text-[var(--muted)] leading-tight whitespace-pre-line">{subtitle}</div>
@@ -53,12 +53,21 @@ function RacingHelmet({ size = 36 }) {
     </svg>
   );
 }
-function CrossedFlags({ size = 44 }) {
+function CrossedFlags({ size = 48 }) {
+  // The PNG has empty transparent padding, so scale it ~2x to match visual weight
+  const scale = 2;
   return (
     <img
       src="/crossed-flags.png"
       alt="Crossed checkered flags"
-      style={{ width: size + 12, height: size + 12, marginTop: -4, marginBottom: -4 }}
+      style={{
+        width: size * scale,
+        height: size * scale,
+        marginTop: -size * (scale - 1) / 2,
+        marginBottom: -size * (scale - 1) / 2,
+        marginLeft: -size * (scale - 1) / 2,
+        marginRight: -size * (scale - 1) / 2,
+      }}
       className="object-contain"
     />
   );
