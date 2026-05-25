@@ -12,7 +12,7 @@ function Stat({ icon: Icon, value, label, color }) {
     <div className="flex items-center gap-3" data-testid={`hero-stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <Icon size={22} style={{ color }} />
       <div>
-        <div className="font-brush text-[22px] leading-none text-white">{value}</div>
+        <div className="font-mono-crt font-bold text-[20px] leading-none text-white tracking-tight">{value}</div>
         <div className="font-mono-crt text-[11px] text-[var(--muted)] mt-1">{label}</div>
       </div>
     </div>
