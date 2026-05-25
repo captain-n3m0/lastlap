@@ -29,9 +29,12 @@ export default function Navbar() {
   };
 
   const initial = (user?.username || user?.display_name || "R").charAt(0).toUpperCase();
-  // Real photo avatar (matches Figma reference). Deterministic by username.
-  const seed = encodeURIComponent(user?.username || "rider");
-  const avatarUrl = `https://i.pravatar.cc/100?u=${seed}`;
+  // Local avatar — deterministic colored circle SVG (no external service)
+  const avatarBg = user?.avatar_color || "#8B5CF6";
+  const avatarSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0' stop-color='${avatarBg}'/><stop offset='1' stop-color='#0a0a10'/></linearGradient></defs><rect width='40' height='40' fill='url(%23g)'/><text x='20' y='27' text-anchor='middle' font-family='monospace' font-weight='700' font-size='20' fill='white'>${initial}</text></svg>`
+  )}`;
+  const avatarUrl = avatarSvg;
 
   return (
     <nav className="w-full border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-md sticky top-0 z-50" data-testid="main-navbar">

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import WalletButton from "../components/WalletButton";
 import XLogo from "../components/XLogo";
-import CyberFrameBorder from "../components/CyberFrameBorder";
+import CyberFrameBorder, { CyberFrameFill, CyberFrameStroke } from "../components/CyberFrameBorder";
 import { Mail, Lock, Users, Flame, Trophy, Globe, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -145,153 +145,147 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen relative bg-[var(--bg)]" data-testid="login-page">
+    <div className="h-screen overflow-hidden relative bg-[var(--bg)]" data-testid="login-page">
       {/* ===== Full-page background ===== */}
-      <div className="fixed inset-0 z-0">
+      <div className="absolute inset-0 z-0">
         <img src="/login-bg.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/70" />
       </div>
 
-      {/* ===== LASTLAP top-left ===== */}
-      <div className="relative z-10 px-8 lg:px-12 pt-8">
-        <div className="font-brush text-[40px] leading-none flex items-center gap-3">
-          <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
-          <div className="w-8 h-6 checker-bg border border-white/40 rounded ml-1" />
-        </div>
-        <div className="font-pixel text-[9px] tracking-widest text-white/70 mt-2">THE FINAL LAP DEFINES EVERYTHING</div>
-      </div>
-
-      {/* ===== Two-column main: headline + auth card ===== */}
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 px-8 lg:px-12 py-8 lg:py-12 items-center">
-        {/* Left — headline (over background) */}
-        <div className="hidden lg:block">
-          <h1 className="font-brush text-[64px] leading-[0.95] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">JOIN THE RACE.</h1>
-          <h1 className="font-brush text-[64px] leading-[0.95] text-[var(--purple-bright)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] mt-1">OWN THE LEGEND.</h1>
+      <div className="relative z-10 h-full flex flex-col">
+        {/* ===== LASTLAP top-left ===== */}
+        <div className="px-8 lg:px-12 pt-5 flex-shrink-0">
+          <div className="font-brush text-[34px] leading-none flex items-center gap-3">
+            <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
+            <div className="w-7 h-5 checker-bg border border-white/40 rounded ml-1" />
+          </div>
         </div>
 
-        {/* Right — auth card with cyber frame */}
-        <div className="relative w-full max-w-[540px] mx-auto" data-testid="auth-card">
-          <div className="cyber-frame relative backdrop-blur-md bg-black/55">
-            <CyberFrameBorder />
-            <div className="relative p-10 md:p-12 z-1">
-              <div className="flex justify-center mb-5">
-                <SkullEmblem />
-              </div>
+        {/* ===== Middle: headline + auth card ===== */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 px-8 lg:px-12 items-center min-h-0">
+          {/* Left — headline */}
+          <div className="hidden lg:block">
+            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">JOIN THE RACE.</h1>
+            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-[var(--purple-bright)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] mt-1">OWN THE LEGEND.</h1>
+          </div>
 
-              <h2 className="font-brush text-[44px] leading-none text-center mb-2" data-testid="welcome-heading">
-                <span className="text-white">WELCOME </span>
-                <span className="text-[var(--purple)]">RACER</span>
-              </h2>
-              <div className="font-mono-crt text-[14px] text-[var(--muted)] text-center mb-8">
-                Log in or sign up to access the Racer Hub
-              </div>
+          {/* Right — auth card */}
+          <div className="relative w-full max-w-[520px] mx-auto" data-testid="auth-card">
+            <div className="cyber-frame relative">
+              <CyberFrameFill />
+              <div className="relative p-7 md:p-9 z-10">
+                <div className="flex justify-center mb-3">
+                  <SkullEmblem />
+                </div>
 
-              {mode === "choose" && (
-                <>
-                  <button
-                    onClick={handleXLogin}
-                    className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full flex items-center justify-center gap-3 py-4 text-white font-pixel text-[12px]"
-                    data-testid="continue-x-btn"
-                  >
-                    <XLogo size={18} />
-                    <span>CONTINUE WITH X (TWITTER)</span>
-                  </button>
+                <h2 className="font-brush text-[36px] leading-none text-center mb-1.5" data-testid="welcome-heading">
+                  <span className="text-white">WELCOME </span>
+                  <span className="text-[var(--purple)]">RACER</span>
+                </h2>
+                <div className="font-mono-crt text-[13px] text-[var(--muted)] text-center mb-5">
+                  Log in or sign up to access the Racer Hub
+                </div>
 
-                  <div className="my-6 flex items-center gap-3">
-                    <div className="flex-1 h-px bg-[var(--border)]" />
-                    <div className="font-pixel text-[11px] tracking-widest text-[var(--muted)]">OR</div>
-                    <div className="flex-1 h-px bg-[var(--border)]" />
-                  </div>
-
-                  <div className="btn-cyber-outline w-full">
+                {mode === "choose" && (
+                  <>
                     <button
-                      onClick={() => setMode("email")}
-                      className="btn-cyber-outline-inner w-full flex items-center justify-center gap-3 py-4 text-white font-pixel text-[12px] hover:text-[var(--purple-bright)] transition"
-                      data-testid="continue-email-btn"
+                      onClick={handleXLogin}
+                      className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px]"
+                      data-testid="continue-x-btn"
                     >
-                      <Mail size={16} />
-                      <span>CONTINUE WITH EMAIL</span>
+                      <XLogo size={16} />
+                      <span>CONTINUE WITH X (TWITTER)</span>
                     </button>
-                  </div>
 
-                  <div className="mt-3">
-                    <WalletButton variant="signin" />
-                  </div>
-
-                  <div className="mt-6 text-center font-mono-crt text-[14px] text-[var(--muted)]">
-                    Don't have an account?{" "}
-                    <Link to="/register" className="text-[var(--purple-bright)] font-pixel text-[11px] tracking-widest ml-1" data-testid="link-register">SIGN UP</Link>
-                  </div>
-                </>
-              )}
-
-              {mode === "email" && (
-                <form onSubmit={submit} data-testid="login-form">
-                  <button type="button" onClick={() => { setMode("choose"); setErr(""); }}
-                    className="flex items-center gap-1 font-pixel text-[10px] tracking-widest text-[var(--muted)] hover:text-white transition mb-4"
-                    data-testid="back-to-choices">
-                    <ChevronLeft size={14} /> BACK
-                  </button>
-                  <label className="label-ll block mb-2">EMAIL</label>
-                  <div className="relative mb-4">
-                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
-                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                      className="input-ll pl-9 bg-black/40" autoFocus data-testid="login-email" />
-                  </div>
-                  <label className="label-ll block mb-2">PASSWORD</label>
-                  <div className="relative mb-5">
-                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
-                    <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                      className="input-ll pl-9 bg-black/40" data-testid="login-password" />
-                  </div>
-                  {err && (
-                    <div className="font-pixel text-[10px] tracking-widest text-[var(--red)] mb-4" data-testid="login-error">
-                      {err.toUpperCase()}
+                    <div className="my-4 flex items-center gap-3">
+                      <div className="flex-1 h-px bg-[var(--border)]" />
+                      <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)]">OR</div>
+                      <div className="flex-1 h-px bg-[var(--border)]" />
                     </div>
-                  )}
-                  <button disabled={loading} className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full py-4 text-white font-pixel text-[12px]" data-testid="login-submit">
-                    {loading ? "STARTING ENGINE..." : "ENTER THE TRACK"}
-                  </button>
-                  <div className="mt-5 p-3 bg-black/40 border border-[var(--border)] rounded">
-                    <div className="label-ll mb-1">DEMO ACCESS</div>
-                    <div className="font-mono-crt text-[12px] text-[var(--muted)]">riderghost@lastlap.com / Demo2025!</div>
-                  </div>
-                  <div className="mt-4 text-center font-mono-crt text-[12px] text-[var(--muted)]">
-                    Don't have an account?{" "}
-                    <Link to="/register" className="text-[var(--purple-bright)] font-pixel text-[11px] tracking-widest ml-1">SIGN UP</Link>
-                  </div>
-                </form>
-              )}
 
-              <div className="mt-8 pt-6 border-t border-[var(--border)] grid grid-cols-3 gap-4">
-                <FeaturePill icon={ShieldLock} title="SECURE LOGIN" subtitle={"Powered by X (Twitter)\nOAuth"} />
-                <FeaturePill icon={RacingHelmet} title="NO EXTRA PASSWORDS" subtitle={"One-click login\nNo hassle"} />
-                <FeaturePill icon={CrossedFlags} title="INSTANT ACCESS" subtitle={"Jump into races\nin seconds"} />
-              </div>
+                    <div className="btn-cyber-outline w-full">
+                      <button
+                        onClick={() => setMode("email")}
+                        className="btn-cyber-outline-inner w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px] hover:text-[var(--purple-bright)] transition"
+                        data-testid="continue-email-btn"
+                      >
+                        <Mail size={14} />
+                        <span>CONTINUE WITH EMAIL</span>
+                      </button>
+                    </div>
 
-              <div className="mt-6 flex items-center justify-center gap-2 font-mono-crt text-[12px] text-[var(--muted-2)] text-center">
-                <Lock size={12} />
-                <span>We never post without permission.<br/>Your data is safe with us.</span>
+                    <div className="mt-2">
+                      <WalletButton variant="signin" />
+                    </div>
+
+                    <div className="mt-4 text-center font-mono-crt text-[13px] text-[var(--muted)]">
+                      Don't have an account?{" "}
+                      <Link to="/register" className="text-[var(--purple-bright)] font-pixel text-[11px] tracking-widest ml-1" data-testid="link-register">SIGN UP</Link>
+                    </div>
+                  </>
+                )}
+
+                {mode === "email" && (
+                  <form onSubmit={submit} data-testid="login-form">
+                    <button type="button" onClick={() => { setMode("choose"); setErr(""); }}
+                      className="flex items-center gap-1 font-pixel text-[10px] tracking-widest text-[var(--muted)] hover:text-white transition mb-3"
+                      data-testid="back-to-choices">
+                      <ChevronLeft size={14} /> BACK
+                    </button>
+                    <label className="label-ll block mb-1.5">EMAIL</label>
+                    <div className="relative mb-3">
+                      <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                        className="input-ll pl-9 bg-black/40 py-2.5" autoFocus data-testid="login-email" />
+                    </div>
+                    <label className="label-ll block mb-1.5">PASSWORD</label>
+                    <div className="relative mb-4">
+                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                      <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                        className="input-ll pl-9 bg-black/40 py-2.5" data-testid="login-password" />
+                    </div>
+                    {err && (
+                      <div className="font-pixel text-[10px] tracking-widest text-[var(--red)] mb-3" data-testid="login-error">
+                        {err.toUpperCase()}
+                      </div>
+                    )}
+                    <button disabled={loading} className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full py-3 text-white font-pixel text-[12px]" data-testid="login-submit">
+                      {loading ? "STARTING ENGINE..." : "ENTER THE TRACK"}
+                    </button>
+                    <div className="mt-3 p-2.5 bg-black/40 border border-[var(--border)] rounded">
+                      <div className="label-ll mb-1">DEMO ACCESS</div>
+                      <div className="font-mono-crt text-[11px] text-[var(--muted)]">riderghost@lastlap.com / Demo2025!</div>
+                    </div>
+                  </form>
+                )}
+
+                <div className="mt-5 pt-4 border-t border-[var(--border)] grid grid-cols-3 gap-3">
+                  <FeaturePill icon={ShieldLock} title="SECURE LOGIN" subtitle={"Powered by X\n(Twitter) OAuth"} />
+                  <FeaturePill icon={RacingHelmet} title="NO EXTRA PASSWORDS" subtitle={"One-click login\nNo hassle"} />
+                  <FeaturePill icon={CrossedFlags} title="INSTANT ACCESS" subtitle={"Jump into races\nin seconds"} />
+                </div>
+
+                <div className="mt-4 flex items-center justify-center gap-2 font-mono-crt text-[11px] text-[var(--muted-2)] text-center">
+                  <Lock size={11} />
+                  <span>We never post without permission. Your data is safe.</span>
+                </div>
               </div>
+              <CyberFrameStroke />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ===== Stats bar (translucent, floating) ===== */}
-      <div className="relative z-10 px-8 lg:px-12 pb-8">
-        <div className="backdrop-blur-md bg-black/45 border border-[var(--border)] rounded-lg p-5 max-w-[820px]">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Stat icon={Users} value="12.5K+" label="Riders" color="#A78BFA" />
-            <Stat icon={Flame} value="2.4M+" label="LP Burned" color="#EF4444" />
-            <Stat icon={Trophy} value="4,892" label="Races Completed" color="#F59E0B" />
-            <Stat icon={Globe} value="70+" label="Countries" color="#A78BFA" />
+        {/* ===== Bottom stats bar ===== */}
+        <div className="px-8 lg:px-12 pb-4 flex-shrink-0">
+          <div className="backdrop-blur-md bg-black/45 border border-[var(--border)] rounded-lg p-3.5 max-w-[820px]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Stat icon={Users} value="12.5K+" label="Riders" color="#A78BFA" />
+              <Stat icon={Flame} value="2.4M+" label="LP Burned" color="#EF4444" />
+              <Stat icon={Trophy} value="4,892" label="Races Completed" color="#F59E0B" />
+              <Stat icon={Globe} value="70+" label="Countries" color="#A78BFA" />
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="relative z-10 text-center font-pixel text-[9px] tracking-widest text-white/40 pb-4">
-        © LASTLAP · THE FINAL LAP DEFINES EVERYTHING
       </div>
     </div>
   );
