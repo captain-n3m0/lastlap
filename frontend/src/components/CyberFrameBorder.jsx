@@ -46,13 +46,15 @@ export function CyberFrameStroke() {
         filter="url(#purpleGlowF)"
       />
 
-      <g stroke="#A78BFA" strokeWidth="2" fill="none" vectorEffect="non-scaling-stroke">
-        <path d="M 22 60 L 22 22 L 60 22" />
-        <path d="M 920 22 L 962 22 L 978 38" />
-        <path d="M 978 60 L 978 92" />
-        <path d="M 22 1108 L 22 1162 L 38 1178" />
-        <path d="M 60 1178 L 92 1178" />
-        <path d="M 938 1178 L 978 1178 L 978 1140" />
+      <g stroke="#A78BFA" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke">
+        {/* Top-left — simple L bracket */}
+        <path d="M 22 64 L 22 22 L 64 22" />
+        {/* Top-right — vertical → diagonal (parallel to notch) → horizontal */}
+        <path d="M 922 22 L 956 22 L 982 48 L 982 86" />
+        {/* Bottom-left — horizontal → diagonal (parallel to notch) → vertical */}
+        <path d="M 22 1114 L 22 1152 L 48 1178 L 86 1178" />
+        {/* Bottom-right — simple L bracket */}
+        <path d="M 936 1178 L 978 1178 L 978 1136" />
       </g>
     </svg>
   );
