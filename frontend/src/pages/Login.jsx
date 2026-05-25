@@ -53,51 +53,14 @@ function RacingHelmet({ size = 36 }) {
     </svg>
   );
 }
-function CrossedFlags({ size = 110 }) {
+function CrossedFlags({ size = 64 }) {
   return (
-    <svg width={size} height={size * 0.78} viewBox="0 0 220 170" aria-hidden="true">
-      <defs>
-        {/* Bigger 16px checker for better readability at small sizes */}
-        <pattern id="cf-check" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
-          <rect width="16" height="16" fill="#FFFFFF" />
-          <rect width="8" height="8" fill="#0F172A" />
-          <rect x="8" y="8" width="8" height="8" fill="#0F172A" />
-        </pattern>
-
-        {/* Left flag — waving */}
-        <path id="cf-left" d="M 14 32
-                              Q 50 14 96 30
-                              L 96 100
-                              Q 50 86 14 104
-                              Z" />
-        <clipPath id="cf-left-clip"><use href="#cf-left" /></clipPath>
-
-        {/* Right flag — waving (mirror) */}
-        <path id="cf-right" d="M 124 30
-                               Q 170 14 206 32
-                               L 206 104
-                               Q 170 86 124 100
-                               Z" />
-        <clipPath id="cf-right-clip"><use href="#cf-right" /></clipPath>
-      </defs>
-
-      {/* Right pole (top-left → bottom-right, behind left flag) */}
-      <line x1="96" y1="14" x2="80" y2="166" stroke="#0F172A" strokeWidth="9" strokeLinecap="round" />
-      {/* Left pole (top-right → bottom-left, behind right flag) */}
-      <line x1="124" y1="14" x2="140" y2="166" stroke="#0F172A" strokeWidth="9" strokeLinecap="round" />
-
-      {/* Left flag checker fill + border */}
-      <g clipPath="url(#cf-left-clip)">
-        <rect x="0" y="0" width="100" height="170" fill="url(#cf-check)" />
-      </g>
-      <use href="#cf-left" fill="none" stroke="#0F172A" strokeWidth="3" strokeLinejoin="round" />
-
-      {/* Right flag checker fill + border */}
-      <g clipPath="url(#cf-right-clip)">
-        <rect x="120" y="0" width="100" height="170" fill="url(#cf-check)" />
-      </g>
-      <use href="#cf-right" fill="none" stroke="#0F172A" strokeWidth="3" strokeLinejoin="round" />
-    </svg>
+    <img
+      src="/crossed-flags.png"
+      alt="Crossed checkered flags"
+      style={{ width: size, height: size }}
+      className="object-contain"
+    />
   );
 }
 
