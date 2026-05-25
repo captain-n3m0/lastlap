@@ -1,5 +1,5 @@
 @import url('https://fonts.cdnfonts.com/css/edo');
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen:wght@400;700&family=Bungee&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -31,10 +31,10 @@ html, body, #root {
 
 body {
     margin: 0;
-    font-family: 'VT323', 'Courier New', monospace;
+    font-family: 'Space Mono', 'Courier New', monospace;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
 }
 
 /* === Tailwind base shadcn vars (force dark always) === */
@@ -69,9 +69,9 @@ body {
 
 /* === Typography utilities === */
 .font-brush { font-family: 'Edo', 'Rubik Wet Paint', cursive; letter-spacing: 0.01em; }
-.font-pixel { font-family: 'Silkscreen', monospace; letter-spacing: 0.06em; }
-.font-mono-crt { font-family: 'VT323', monospace; }
-.font-bungee { font-family: 'Bungee', sans-serif; }
+.font-pixel { font-family: 'Space Mono', monospace; font-weight: 700; letter-spacing: 0.08em; }
+.font-mono-crt { font-family: 'Space Mono', monospace; }
+.font-bungee { font-family: 'Space Mono', monospace; font-weight: 700; }
 
 /* === Components === */
 .card-ll {
@@ -88,7 +88,8 @@ body {
 .btn-primary-ll {
     background: var(--purple);
     color: white;
-    font-family: 'Silkscreen', monospace;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
     letter-spacing: 0.1em;
     padding: 8px 16px;
     border-radius: 4px;
@@ -104,7 +105,8 @@ body {
     background: transparent;
     color: var(--text);
     border: 1px solid var(--border);
-    font-family: 'Silkscreen', monospace;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
     letter-spacing: 0.1em;
     padding: 10px 20px;
     border-radius: 4px;
@@ -120,15 +122,16 @@ body {
     color: var(--text);
     padding: 12px 14px;
     border-radius: 6px;
-    font-family: 'VT323', monospace;
-    font-size: 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
     width: 100%;
     transition: border-color 0.15s ease;
 }
 .input-ll:focus { outline: none; border-color: var(--purple); }
 
 .label-ll {
-    font-family: 'Silkscreen', monospace;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
     font-size: 10px;
     letter-spacing: 0.12em;
     color: var(--muted);
@@ -136,10 +139,11 @@ body {
 }
 
 .stat-num {
-    font-family: 'Silkscreen', monospace;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
     font-size: 22px;
     color: var(--purple-bright);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
 }
 
 /* === Glow & effects === */
@@ -219,7 +223,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Silkscreen', monospace;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
     font-size: 12px;
     color: white;
     text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
