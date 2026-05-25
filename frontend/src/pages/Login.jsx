@@ -5,6 +5,7 @@ import WalletButton from "../components/WalletButton";
 import XLogo from "../components/XLogo";
 import CyberFrameBorder, { CyberFrameFill, CyberFrameStroke } from "../components/CyberFrameBorder";
 import { Mail, Lock, Users, Flame, Trophy, Globe, ChevronLeft } from "lucide-react";
+import SkewCheckerFlag from "../components/SkewCheckerFlag";
 import { toast } from "sonner";
 
 function Stat({ icon: Icon, value, label, color }) {
@@ -121,7 +122,7 @@ export default function Login() {
         <div className="px-8 lg:px-12 pt-5 flex-shrink-0">
           <div className="font-brush text-[34px] leading-none flex items-center gap-3">
             <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
-            <div className="w-7 h-5 checker-bg border border-white/40 rounded ml-1" />
+            <SkewCheckerFlag width={48} height={34} color="#E8E8EC" />
           </div>
         </div>
 
