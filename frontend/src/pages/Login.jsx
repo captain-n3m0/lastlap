@@ -54,11 +54,19 @@ function RacingHelmet({ size = 36 }) {
   );
 }
 function CrossedFlags({ size = 64 }) {
+  const scale = 3;
   return (
     <img
       src="/crossed-flags.png"
       alt="Crossed checkered flags"
-      style={{ width: size, height: size }}
+      style={{
+        width: size * scale,
+        height: size * scale,
+        marginTop: -size * (scale - 1) / 2,
+        marginBottom: -size * (scale - 1) / 2,
+        marginLeft: -size * (scale - 1) / 2,
+        marginRight: -size * (scale - 1) / 2,
+      }}
       className="object-contain"
     />
   );
