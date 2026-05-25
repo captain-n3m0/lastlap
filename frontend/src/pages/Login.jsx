@@ -53,24 +53,13 @@ function RacingHelmet({ size = 36 }) {
 }
 function CrossedFlags({ size = 36 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
-      <defs>
-        <pattern id="cflag2" width="4" height="4" patternUnits="userSpaceOnUse">
-          <rect width="2" height="2" fill="#E8E8EC" />
-          <rect x="2" y="2" width="2" height="2" fill="#E8E8EC" />
-          <rect x="2" y="0" width="2" height="2" fill="#0a0a10" />
-          <rect x="0" y="2" width="2" height="2" fill="#0a0a10" />
-        </pattern>
-      </defs>
-      {/* Left pole: bottom-left → top-right */}
-      <line x1="8" y1="33" x2="28" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Right pole: bottom-right → top-left (forms an X) */}
-      <line x1="28" y1="33" x2="8" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Right flag waving from top of left pole (which ends at top-right) */}
-      <path d="M 28 4 Q 33 6 31 12 Q 26 10 22 14 Q 25 9 28 4 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
-      {/* Left flag waving from top of right pole (which ends at top-left) */}
-      <path d="M 8 4 Q 3 6 5 12 Q 10 10 14 14 Q 11 9 8 4 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
-    </svg>
+    <img
+      src="/crossed-flags.png"
+      alt="Crossed checkered flags"
+      width={size}
+      height={size}
+      className="object-contain"
+    />
   );
 }
 
