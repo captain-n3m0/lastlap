@@ -61,63 +61,27 @@ function CrossedFlags({ size = 36 }) {
           <rect x="0" y="2" width="2" height="2" fill="#0a0a10" />
         </pattern>
       </defs>
-      <line x1="9" y1="33" x2="14" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="27" y1="33" x2="22" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M 13 6 Q 18 4 22 6 Q 24 8 22 12 Q 18 10 13 14 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
-      <path d="M 23 6 Q 18 4 14 6 Q 12 8 14 12 Q 18 10 23 14 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
+      {/* Left pole: bottom-left → top-right */}
+      <line x1="8" y1="33" x2="28" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Right pole: bottom-right → top-left (forms an X) */}
+      <line x1="28" y1="33" x2="8" y2="4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Right flag waving from top of left pole (which ends at top-right) */}
+      <path d="M 28 4 Q 33 6 31 12 Q 26 10 22 14 Q 25 9 28 4 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
+      {/* Left flag waving from top of right pole (which ends at top-left) */}
+      <path d="M 8 4 Q 3 6 5 12 Q 10 10 14 14 Q 11 9 8 4 Z" fill="url(#cflag2)" stroke="#0a0a10" strokeWidth="0.5" />
     </svg>
   );
 }
 
 function SkullEmblem() {
   return (
-    <svg width="92" height="100" viewBox="0 0 92 100" aria-hidden="true">
-      <defs>
-        <radialGradient id="skullGlow" cx="0.5" cy="0.5" r="0.55">
-          <stop offset="0" stopColor="#8B5CF6" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#8B5CF6" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="helmetGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#6B21A8" />
-          <stop offset="1" stopColor="#1a1a22" />
-        </linearGradient>
-      </defs>
-      <circle cx="46" cy="50" r="46" fill="url(#skullGlow)" />
-      <g fill="#A78BFA" stroke="#6B21A8" strokeWidth="0.5">
-        <polygon points="22,28 25,8 28,28" />
-        <polygon points="32,22 36,4 40,22" />
-        <polygon points="44,18 48,2 52,18" />
-        <polygon points="56,22 60,4 64,22" />
-        <polygon points="66,28 69,8 72,28" />
-      </g>
-      <polygon points="16,38 4,32 18,46" fill="#A78BFA" />
-      <polygon points="76,38 88,32 74,46" fill="#A78BFA" />
-      <path d="M 14 40 Q 14 22 46 22 Q 78 22 78 40 L 78 56 Q 78 62 72 64 L 20 64 Q 14 62 14 56 Z" fill="url(#helmetGrad)" stroke="#A78BFA" strokeWidth="1.5" />
-      <rect x="20" y="46" width="52" height="3" fill="#1a1a22" />
-      <circle cx="46" cy="35" r="6" fill="#1a1a22" stroke="#A78BFA" strokeWidth="1" />
-      <path d="M 42 35 L 50 35 M 46 31 L 46 39" stroke="#A78BFA" strokeWidth="1.2" />
-      <ellipse cx="46" cy="58" rx="18" ry="12" fill="#E8E8EC" />
-      <ellipse cx="40" cy="58" rx="4" ry="5" fill="#0a0a10" />
-      <ellipse cx="52" cy="58" rx="4" ry="5" fill="#0a0a10" />
-      <circle cx="40" cy="58" r="1.5" fill="#A78BFA" />
-      <circle cx="52" cy="58" r="1.5" fill="#A78BFA" />
-      <polygon points="46,60 44,66 48,66" fill="#0a0a10" />
-      <g fill="#0a0a10">
-        <rect x="40" y="68" width="2" height="3" />
-        <rect x="43" y="68" width="2" height="3" />
-        <rect x="46" y="68" width="2" height="3" />
-        <rect x="49" y="68" width="2" height="3" />
-      </g>
-      <ellipse cx="34" cy="82" rx="9" ry="8" fill="#1a1a22" stroke="#A78BFA" strokeWidth="1.5" />
-      <ellipse cx="58" cy="82" rx="9" ry="8" fill="#1a1a22" stroke="#A78BFA" strokeWidth="1.5" />
-      <g fill="#A78BFA" opacity="0.7">
-        <circle cx="31" cy="82" r="1" /><circle cx="34" cy="82" r="1" /><circle cx="37" cy="82" r="1" />
-        <circle cx="55" cy="82" r="1" /><circle cx="58" cy="82" r="1" /><circle cx="61" cy="82" r="1" />
-        <circle cx="31" cy="85" r="1" /><circle cx="34" cy="85" r="1" /><circle cx="37" cy="85" r="1" />
-        <circle cx="55" cy="85" r="1" /><circle cx="58" cy="85" r="1" /><circle cx="61" cy="85" r="1" />
-      </g>
-      <rect x="42" y="74" width="8" height="6" fill="#1a1a22" stroke="#A78BFA" strokeWidth="1" />
-    </svg>
+    <img
+      src="/skull-emblem.png"
+      alt="LastLap skull emblem"
+      width="120"
+      height="120"
+      className="object-contain drop-shadow-[0_0_24px_rgba(139,92,246,0.55)]"
+    />
   );
 }
 
