@@ -215,35 +215,26 @@ body {
     background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
 }
 
-/* Cyber frame — angular clipped corners with purple glow border */
+/* Cyber frame — SVG overlay version (border-stroke only) */
 .cyber-frame {
     position: relative;
-    background: var(--purple);
-    padding: 2px;
-    clip-path: polygon(
-        24px 0,
-        calc(100% - 8px) 0,
-        100% 8px,
-        100% calc(100% - 24px),
-        calc(100% - 24px) 100%,
-        8px 100%,
-        0 calc(100% - 8px),
-        0 24px
-    );
-    filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.45));
-}
-.cyber-frame-inner {
     background: var(--bg-card);
     clip-path: polygon(
-        23px 0,
-        calc(100% - 7px) 0,
-        100% 7px,
-        100% calc(100% - 23px),
-        calc(100% - 23px) 100%,
-        7px 100%,
-        0 calc(100% - 7px),
-        0 23px
+        0 0,
+        calc(100% - 40px) 0,
+        100% 40px,
+        100% 100%,
+        40px 100%,
+        0 calc(100% - 40px)
     );
+}
+.cyber-frame-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
 }
 
 /* Cyber button — sharp-cut top-left & bottom-right corners */

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import WalletButton from "../components/WalletButton";
 import XLogo from "../components/XLogo";
+import CyberFrameBorder from "../components/CyberFrameBorder";
 import { Mail, Lock, HardHat, Flag, Users, Flame, Trophy, Globe, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -224,14 +225,9 @@ export default function Login() {
         </div>
 
         <div className="relative w-full max-w-[520px]" data-testid="auth-card">
-          <div className="cyber-frame">
-            <div className="cyber-frame-inner p-10 md:p-12 relative">
-              {/* Corner brackets */}
-              <span className="corner-bracket tl" />
-              <span className="corner-bracket tr" />
-              <span className="corner-bracket bl" />
-              <span className="corner-bracket br" />
-
+          <div className="cyber-frame relative">
+            <CyberFrameBorder />
+            <div className="relative p-10 md:p-12 z-1">
               {/* Skull emblem */}
               <div className="flex justify-center mb-5">
                 <SkullEmblem />
