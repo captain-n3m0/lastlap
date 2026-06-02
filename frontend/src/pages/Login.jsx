@@ -9,10 +9,10 @@ import { Mail, Lock, Users, Flame, Trophy, Globe, ChevronLeft } from "lucide-rea
 import SkewCheckerFlag from "../components/SkewCheckerFlag";
 import { toast } from "sonner";
 
-function Stat({ icon: Icon, value, label, color }) {
+function Stat({ icon: Icon, value, label, color, className = "" }) {
   return (
-    <div className="flex items-center gap-3" data-testid={`hero-stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
-      <Icon size={22} style={{ color }} />
+    <div className={`flex items-center gap-3 ${className}`} data-testid={`hero-stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+      <Icon size={22} style={{ color }} className="icon-wiggle" />
       <div>
         <div className="font-mono-crt font-bold text-[20px] leading-none text-white tracking-tight">{value}</div>
         <div className="font-mono-crt text-[11px] text-[var(--muted)] mt-1">{label}</div>
@@ -21,10 +21,10 @@ function Stat({ icon: Icon, value, label, color }) {
   );
 }
 
-function FeaturePill({ icon: Icon, title, subtitle }) {
+function FeaturePill({ icon: Icon, title, subtitle, className = "" }) {
   return (
-    <div className="flex-1 flex flex-col items-center text-center gap-2">
-      <div className="h-14 flex items-center justify-center">
+    <div className={`flex-1 flex flex-col items-center text-center gap-2 ${className}`}>
+      <div className="h-14 flex items-center justify-center icon-wiggle">
         <Icon size={56} />
       </div>
       <div className="font-pixel text-[10px] tracking-widest text-white mt-1">{title}</div>
@@ -68,7 +68,7 @@ function CrossedFlags({ size = 64 }) {
         marginLeft: -size * (scale - 1) / 2,
         marginRight: -size * (scale - 1) / 2,
       }}
-      className="object-contain"
+      className="object-contain float-drift"
     />
   );
 }
@@ -80,7 +80,7 @@ function SkullEmblem() {
       alt="LastLap skull emblem"
       width="120"
       height="120"
-      className="object-contain drop-shadow-[0_0_24px_rgba(139,92,246,0.55)]"
+      className="object-contain drop-shadow-[0_0_24px_rgba(139,92,246,0.55)] float-drift"
     />
   );
 }
@@ -122,7 +122,7 @@ export default function Login() {
   const formatStatValue = (value) => (value == null ? "—" : Number(value).toLocaleString());
 
   return (
-    <div className="min-h-screen overflow-x-hidden relative bg-[var(--bg)]" data-testid="login-page">
+    <div className="min-h-screen overflow-x-hidden relative bg-[var(--bg)] page-transition" data-testid="login-page">
       {/* ===== Full-page background ===== */}
       <div className="absolute inset-0 z-0">
         <img src="/login-bg.png" alt="" className="absolute inset-0 w-full h-full object-cover motion-pan" />
@@ -132,9 +132,9 @@ export default function Login() {
       <div className="relative z-10 h-full flex flex-col">
         {/* ===== LASTLAP top-left ===== */}
         <div className="px-8 lg:px-12 pt-5 flex-shrink-0">
-          <div className="font-brush text-[34px] leading-none flex items-center gap-3">
+          <div className="font-brush text-[34px] leading-none flex items-center gap-3 impact-in">
             <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
-            <SkewCheckerFlag width={48} height={34} color="#E8E8EC" />
+            <span className="float-drift inline-flex"><SkewCheckerFlag width={48} height={34} color="#E8E8EC" /></span>
           </div>
         </div>
 
@@ -142,13 +142,13 @@ export default function Login() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 px-8 lg:px-12 items-center min-h-0">
           {/* Left — headline */}
           <div className="hidden lg:block">
-            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">JOIN THE RACE.</h1>
-            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-[var(--purple-bright)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] mt-1">OWN THE LEGEND.</h1>
+            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] hero-title">JOIN THE RACE.</h1>
+            <h1 className="font-brush text-[56px] xl:text-[64px] leading-[0.95] text-[var(--purple-bright)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] mt-1 hero-sub">OWN THE LEGEND.</h1>
           </div>
 
           {/* Right — auth card */}
           <div className="relative w-full max-w-[520px] mx-auto" data-testid="auth-card">
-            <div className="cyber-frame relative">
+            <div className="cyber-frame relative card-animate">
               <CyberFrameFill />
               <div className="relative p-7 md:p-9 z-10">
                 <div className="flex justify-center mb-3">
@@ -167,7 +167,7 @@ export default function Login() {
                   <>
                     <button
                       onClick={handleXLogin}
-                      className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px]"
+                      className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px] cta-pulse"
                       data-testid="continue-x-btn"
                     >
                       <XLogo size={16} />
@@ -183,7 +183,7 @@ export default function Login() {
                     <div className="btn-cyber-outline w-full">
                       <button
                         onClick={() => setMode("email")}
-                        className="btn-cyber-outline-inner w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px] hover:text-[var(--purple-bright)] transition"
+                        className="btn-cyber-outline-inner w-full flex items-center justify-center gap-3 py-3 text-white font-pixel text-[12px] hover:text-[var(--purple-bright)] transition cta-pulse"
                         data-testid="continue-email-btn"
                       >
                         <Mail size={14} />
@@ -226,7 +226,7 @@ export default function Login() {
                         {err.toUpperCase()}
                       </div>
                     )}
-                    <button disabled={loading} className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full py-3 text-white font-pixel text-[12px]" data-testid="login-submit">
+                    <button disabled={loading} className="btn-cyber bg-[var(--purple)] hover:bg-[var(--purple-bright)] w-full py-3 text-white font-pixel text-[12px] cta-pulse" data-testid="login-submit">
                       {loading ? "STARTING ENGINE..." : "ENTER THE TRACK"}
                     </button>
                   </form>
@@ -234,9 +234,9 @@ export default function Login() {
 
 
                 <div className="mt-5 pt-4 border-t border-[var(--border)] grid grid-cols-3 gap-3">
-                  <FeaturePill icon={ShieldLock} title="SECURE LOGIN" subtitle={"Powered by X\n(Twitter) OAuth"} />
-                  <FeaturePill icon={RacingHelmet} title="NO EXTRA PASSWORDS" subtitle={"One-click login\nNo hassle"} />
-                  <FeaturePill icon={CrossedFlags} title="INSTANT ACCESS" subtitle={"Jump into races\nin seconds"} />
+                  <FeaturePill icon={ShieldLock} title="SECURE LOGIN" subtitle={"Powered by X\n(Twitter) OAuth"} className="row-animate stagger-1" />
+                  <FeaturePill icon={RacingHelmet} title="NO EXTRA PASSWORDS" subtitle={"One-click login\nNo hassle"} className="row-animate stagger-2" />
+                  <FeaturePill icon={CrossedFlags} title="INSTANT ACCESS" subtitle={"Jump into races\nin seconds"} className="row-animate stagger-3" />
                 </div>
 
                 <div className="mt-4 flex items-center justify-center gap-2 font-mono-crt text-[11px] text-[var(--muted-2)] text-center">
@@ -251,12 +251,12 @@ export default function Login() {
 
         {/* ===== Bottom stats bar ===== */}
         <div className="px-8 lg:px-12 pb-4 flex-shrink-0">
-          <div className="backdrop-blur-md bg-black/45 border border-[var(--border)] rounded-lg p-3.5 max-w-[820px]">
+          <div className="backdrop-blur-md bg-black/45 border border-[var(--border)] rounded-lg p-3.5 max-w-[820px] card-animate">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Stat icon={Users} value={formatStatValue(globalStats?.total_riders)} label="Riders" color="#A78BFA" />
-              <Stat icon={Flame} value={formatStatValue(globalStats?.total_lp)} label="LP Earned" color="#EF4444" />
-              <Stat icon={Trophy} value={formatStatValue(globalStats?.total_tasks_completed)} label="Tasks Completed" color="#F59E0B" />
-              <Stat icon={Globe} value={formatStatValue(globalStats?.active_racers)} label="Active Racers" color="#A78BFA" />
+              <Stat icon={Users} value={formatStatValue(globalStats?.total_riders)} label="Riders" color="#A78BFA" className="row-animate stagger-1" />
+              <Stat icon={Flame} value={formatStatValue(globalStats?.total_lp)} label="LP Earned" color="#EF4444" className="row-animate stagger-2" />
+              <Stat icon={Trophy} value={formatStatValue(globalStats?.total_tasks_completed)} label="Tasks Completed" color="#F59E0B" className="row-animate stagger-3" />
+              <Stat icon={Globe} value={formatStatValue(globalStats?.active_racers)} label="Active Racers" color="#A78BFA" className="row-animate stagger-4" />
             </div>
           </div>
         </div>

@@ -73,25 +73,25 @@ export default function Register() {
   const upd = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className="min-h-screen flex bg-[var(--bg)]" data-testid="register-page">
-      <div className="hidden lg:flex flex-1 relative border-r border-[var(--border)] overflow-hidden">
+    <div className="min-h-screen flex bg-[var(--bg)] page-transition" data-testid="register-page">
+      <div className="hidden lg:flex flex-1 relative border-r border-[var(--border)] overflow-hidden scanline">
         <img
           src="/hero-art.png"
           alt="LastLap riders"
           className="w-full h-full object-cover motion-pan"
         />
         <div className="absolute bottom-0 left-0 p-10">
-          <div className="font-brush text-[72px] leading-none">
+          <div className="font-brush text-[72px] leading-none hero-title">
             <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
           </div>
-          <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mt-4">BUILT FOR RIDERS — MADE FOR CHAMPIONS</div>
+          <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mt-4 hero-sub">BUILT FOR RIDERS — MADE FOR CHAMPIONS</div>
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center p-6">
         {mode === "form" && (
-          <form onSubmit={submit} className="w-full max-w-md" data-testid="register-form">
-            <h1 className="font-brush text-[48px] mb-2 text-white">JOIN THE<span className="text-[var(--purple)]"> GRID</span></h1>
-            <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mb-8">CREATE YOUR LASTLAP ACCOUNT</div>
+          <form onSubmit={submit} className="w-full max-w-md card-animate" data-testid="register-form">
+            <h1 className="font-brush text-[48px] mb-2 text-white hero-title">JOIN THE<span className="text-[var(--purple)]"> GRID</span></h1>
+            <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mb-8 hero-sub">CREATE YOUR LASTLAP ACCOUNT</div>
 
             <label className="label-ll block mb-2">USERNAME</label>
             <input required minLength={3} maxLength={20} value={form.username} onChange={upd("username")} className="input-ll mb-4" data-testid="register-username" />
@@ -107,7 +107,7 @@ export default function Register() {
 
             {err && <div className="font-pixel text-[10px] tracking-widest text-[var(--red)] mb-4" data-testid="register-error">{err.toUpperCase()}</div>}
 
-            <button disabled={loading} className="btn-primary-ll w-full py-3 text-[12px]" data-testid="register-submit">
+            <button disabled={loading} className="btn-primary-ll w-full py-3 text-[12px] cta-pulse" data-testid="register-submit">
               {loading ? "STARTING..." : "START YOUR ENGINE"}
             </button>
 
@@ -126,9 +126,9 @@ export default function Register() {
         )}
 
         {mode === "otp" && (
-          <form onSubmit={submitOtp} className="w-full max-w-md" data-testid="register-otp-form">
-            <h1 className="font-brush text-[44px] mb-2 text-white">VERIFY<span className="text-[var(--purple)]"> EMAIL</span></h1>
-            <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mb-6">ENTER THE CODE WE SENT</div>
+          <form onSubmit={submitOtp} className="w-full max-w-md card-animate" data-testid="register-otp-form">
+            <h1 className="font-brush text-[44px] mb-2 text-white hero-title">VERIFY<span className="text-[var(--purple)]"> EMAIL</span></h1>
+            <div className="font-pixel text-[10px] tracking-widest text-[var(--muted)] mb-6 hero-sub">ENTER THE CODE WE SENT</div>
 
             <label className="label-ll block mb-2">VERIFICATION CODE</label>
             <input
@@ -145,7 +145,7 @@ export default function Register() {
 
             {err && <div className="font-pixel text-[10px] tracking-widest text-[var(--red)] mb-4" data-testid="register-otp-error">{err.toUpperCase()}</div>}
 
-            <button disabled={loading} className="btn-primary-ll w-full py-3 text-[12px]" data-testid="register-otp-submit">
+            <button disabled={loading} className="btn-primary-ll w-full py-3 text-[12px] cta-pulse" data-testid="register-otp-submit">
               {loading ? "VERIFYING..." : "VERIFY CODE"}
             </button>
             <button

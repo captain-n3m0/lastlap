@@ -37,9 +37,9 @@ export default function Navbar() {
   const avatarUrl = avatarSvg;
 
   return (
-    <nav className="w-full border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-md sticky top-0 z-50" data-testid="main-navbar">
+    <nav className="w-full border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-md sticky top-0 z-50 nav-slide" data-testid="main-navbar">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <Link to="/" className="font-brush text-3xl tracking-tight" data-testid="navbar-logo">
+        <Link to="/" className="font-brush text-3xl tracking-tight neon-text" data-testid="navbar-logo">
           <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
         </Link>
 
@@ -52,17 +52,17 @@ export default function Navbar() {
         <div className="relative" ref={menuRef}>
           <button onClick={() => setOpen(v => !v)} data-testid="profile-menu-button"
             className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--purple)] flex-shrink-0" style={{ background: user?.avatar_color || "#8B5CF6" }}>
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--purple)] flex-shrink-0 profile-ring" style={{ background: user?.avatar_color || "#8B5CF6" }}>
               <img src={avatarUrl} alt={initial} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
             </div>
             <div className="hidden sm:block text-left">
               <div className="font-pixel text-[11px] tracking-widest text-white">@{user?.username || "rider"}</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--amber)]">{user?.title || "ROOKIE RACER"}</div>
             </div>
-            <ChevronDown size={14} className="text-[var(--muted)] group-hover:text-white transition" />
+            <ChevronDown size={14} className="text-[var(--muted)] group-hover:text-white transition icon-wiggle" />
           </button>
           {open && (
-            <div className="absolute right-0 top-full mt-2 w-72 card-ll p-2 fade-in-up" data-testid="profile-dropdown">
+            <div className="absolute right-0 top-full mt-2 w-72 card-ll p-2 menu-pop" data-testid="profile-dropdown">
               <div className="px-3 py-2 border-b border-[var(--border)] mb-1">
                 <div className="font-pixel text-[10px] tracking-widest text-white">@{user?.username}</div>
                 {user?.wallet_address ? (

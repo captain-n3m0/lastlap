@@ -48,21 +48,21 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]" data-testid="tasks-page">
+    <div className="min-h-screen bg-[var(--bg)] page-transition" data-testid="tasks-page">
       <Navbar />
       <main className="max-w-[1100px] mx-auto px-6 lg:px-10 py-12">
-        <h1 className="font-brush text-[44px] sm:text-[64px] leading-none mb-2">
+        <h1 className="font-brush text-[44px] sm:text-[64px] leading-none mb-2 hero-title">
           <span className="text-white">RIDER </span><span className="text-[var(--purple)]">GARAGE</span>
         </h1>
-        <div className="font-pixel text-[9px] sm:text-[10px] tracking-widest text-[var(--muted)] mb-8">ALL MISSIONS — STACK YOUR LAP POINTS</div>
+        <div className="font-pixel text-[9px] sm:text-[10px] tracking-widest text-[var(--muted)] mb-8 hero-sub">ALL MISSIONS — STACK YOUR LAP POINTS</div>
 
-        <div className="card-ll p-5 space-y-2">
-          {tasks.map((t) => {
+        <div className="card-ll p-5 space-y-2 card-animate">
+          {tasks.map((t, index) => {
             const platformIcon = t.platform === "X" ? <XLogo size={14} /> : t.platform === "DISCORD" ? "♣" : t.platform === "WALLET" ? "₿" : t.platform === "EMAIL" ? "✉" : "★";
             const done = t.status === "completed";
             const started = t.status === "started";
             return (
-              <div key={t.id} className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 ${done ? "opacity-60" : ""}`} data-testid={`task-row-${t.id}`}>
+              <div key={t.id} className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 row-animate stagger-${(index % 6) + 1} ${done ? "opacity-60" : ""}`} data-testid={`task-row-${t.id}`}>
                 <div className="w-10 h-10 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white flex-shrink-0">
                   {platformIcon}
                 </div>
@@ -75,7 +75,7 @@ export default function TasksPage() {
                   <button
                     onClick={() => handleAction(t)}
                     disabled={done || busy}
-                    className="btn-primary-ll w-full sm:w-auto sm:min-w-[120px]"
+                    className="btn-primary-ll w-full sm:w-auto sm:min-w-[120px] cta-pulse"
                     data-testid={`task-btn-${t.id}`}
                   >
                     {done ? "DONE" : started ? "CLAIM" : "START TASK"}

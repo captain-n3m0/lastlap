@@ -59,7 +59,7 @@ export default function WalletButton({ variant = "signin", className = "", onLin
       type="button"
       onClick={handle}
       disabled={busy}
-      className={`btn-ghost-ll w-full flex items-center justify-center gap-2 py-3 ${className}`}
+      className={`btn-ghost-ll w-full flex items-center justify-center gap-2 py-3 cta-pulse ${className}`}
       data-testid={`wallet-${variant}-btn`}
     >
       <Wallet size={14} />

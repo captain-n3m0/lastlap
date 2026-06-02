@@ -9,10 +9,10 @@ import { Trophy, Flag, TrendingUp, Flame, Gauge, Users, Copy, Award, Shield, Med
 import CheckeredFlag from "../components/CheckeredFlag";
 import XLogo from "../components/XLogo";
 
-function StatCard({ icon: Icon, label, value, color = "var(--purple-bright)", testid }) {
+function StatCard({ icon: Icon, label, value, color = "var(--purple-bright)", testid, className = "" }) {
   return (
-    <div className="card-ll px-5 py-4 flex items-center gap-4" data-testid={testid}>
-      <div className="w-10 h-10 rounded bg-[var(--bg-card-2)] border border-[var(--border)] flex items-center justify-center">
+    <div className={`card-ll px-5 py-4 flex items-center gap-4 ${className}`} data-testid={testid}>
+      <div className="w-10 h-10 rounded bg-[var(--bg-card-2)] border border-[var(--border)] flex items-center justify-center icon-wiggle">
         <Icon size={18} style={{ color }} />
       </div>
       <div className="flex-1">
@@ -23,12 +23,12 @@ function StatCard({ icon: Icon, label, value, color = "var(--purple-bright)", te
   );
 }
 
-function TaskItem({ task, onAction, isAuthLoading }) {
+function TaskItem({ task, onAction, isAuthLoading, className = "" }) {
   const isCompleted = task.status === "completed";
   const isStarted = task.status === "started";
   const platformIcon = task.platform === "X" ? <XLogo size={14} /> : task.platform === "DISCORD" ? "♣" : task.platform === "WALLET" ? "₿" : task.platform === "EMAIL" ? "✉" : "★";
   return (
-    <div className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 ${isCompleted ? "opacity-60" : ""}`} data-testid={`task-item-${task.id}`}>
+    <div className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 ${isCompleted ? "opacity-60" : ""} ${className}`} data-testid={`task-item-${task.id}`}>
       <div className="w-9 h-9 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white text-sm">
         {platformIcon}
       </div>
@@ -43,7 +43,7 @@ function TaskItem({ task, onAction, isAuthLoading }) {
         <button
           onClick={() => onAction(task)}
           disabled={isCompleted || isAuthLoading}
-          className="btn-primary-ll w-full sm:w-auto sm:min-w-[110px]"
+          className="btn-primary-ll w-full sm:w-auto sm:min-w-[110px] cta-pulse"
           data-testid={`task-action-${task.id}`}
         >
           {isCompleted ? "DONE" : isStarted ? "CLAIM" : "START TASK"}
@@ -85,9 +85,9 @@ function RankBadge({ rank }) {
   return <div className="w-7 h-7 flex items-center justify-center font-pixel text-sm text-[var(--muted)]">{rank}</div>;
 }
 
-function LeaderboardRow({ entry, highlighted }) {
+function LeaderboardRow({ entry, highlighted, className = "" }) {
   return (
-    <div className={`px-3 py-2.5 flex items-center gap-3 ${highlighted ? "card-ll-inner border-[var(--purple)]" : ""}`}
+    <div className={`px-3 py-2.5 flex items-center gap-3 ${highlighted ? "card-ll-inner border-[var(--purple)]" : ""} ${className}`}
       data-testid={`leaderboard-row-${entry.rank}`}>
       <RankBadge rank={entry.rank} />
       <div className="avatar-pixel" style={{ background: entry.avatar_color }}>{entry.username.charAt(0).toUpperCase()}</div>
@@ -203,7 +203,7 @@ export default function Dashboard() {
   const tasksGoalLabel = tasksGoal > 0 ? tasksGoal : "—";
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]" data-testid="dashboard-page">
+    <div className="min-h-screen bg-[var(--bg)] page-transition" data-testid="dashboard-page">
       <Navbar />
 
       {/* HERO */}
@@ -236,19 +236,19 @@ export default function Dashboard() {
 
       {/* TOP STATS */}
       <section className="max-w-[1400px] mx-auto px-6 lg:px-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Shield} label="RIDER STATUS" value={user?.role || "ROOKIE RIDER"} testid="stat-status" />
-        <StatCard icon={Flag} label="LAP POINTS (LP)" value={(stats?.lap_points ?? user?.lap_points ?? 0).toLocaleString()} testid="stat-lp" />
-        <StatCard icon={TrendingUp} label="CURRENT RANK" value={`#${stats?.current_rank ?? "—"}`} testid="stat-rank" />
-        <StatCard icon={Flame} label="DAILY STREAKS" value={`${stats?.daily_streak ?? 0} DAYS`} testid="stat-streak" color="var(--amber)" />
+        <StatCard icon={Shield} label="RIDER STATUS" value={user?.role || "ROOKIE RIDER"} testid="stat-status" className="card-animate stagger-1" />
+        <StatCard icon={Flag} label="LAP POINTS (LP)" value={(stats?.lap_points ?? user?.lap_points ?? 0).toLocaleString()} testid="stat-lp" className="card-animate stagger-2" />
+        <StatCard icon={TrendingUp} label="CURRENT RANK" value={`#${stats?.current_rank ?? "—"}`} testid="stat-rank" className="card-animate stagger-3" />
+        <StatCard icon={Flame} label="DAILY STREAKS" value={`${stats?.daily_streak ?? 0} DAYS`} testid="stat-streak" color="var(--amber)" className="card-animate stagger-4" />
       </section>
 
       {/* DAILY TASKS + LEADERBOARD */}
       <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Race Tasks */}
-        <div className="card-ll p-5" data-testid="daily-tasks-panel">
+        <div className="card-ll p-5 card-animate stagger-1" data-testid="daily-tasks-panel">
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-center gap-3">
-              <CheckeredFlag size={44} />
+              <span className="float-drift inline-flex"><CheckeredFlag size={44} /></span>
               <div>
                 <div className="font-brush text-[26px] text-white leading-none">DAILY RACE TASKS</div>
                 <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">COMPLETE TASKS AND EARN LAP POINTS</div>
@@ -257,15 +257,21 @@ export default function Dashboard() {
             <CountdownTimer />
           </div>
           <div className="space-y-2">
-            {tasks.slice(0, 4).map((t) => (
-              <TaskItem key={t.id} task={t} onAction={handleTaskAction} isAuthLoading={busy} />
+            {tasks.slice(0, 4).map((t, index) => (
+              <TaskItem
+                key={t.id}
+                task={t}
+                onAction={handleTaskAction}
+                isAuthLoading={busy}
+                className={`row-animate stagger-${(index % 4) + 1}`}
+              />
             ))}
           </div>
-          <button onClick={() => navigate("/tasks")} className="btn-ghost-ll w-full mt-4" data-testid="view-all-tasks">VIEW ALL TASKS</button>
+          <button onClick={() => navigate("/tasks")} className="btn-ghost-ll w-full mt-4 cta-pulse" data-testid="view-all-tasks">VIEW ALL TASKS</button>
         </div>
 
         {/* Global Leaderboard */}
-        <div className="card-ll p-5 blue-ring" data-testid="leaderboard-panel">
+        <div className="card-ll p-5 blue-ring card-animate stagger-2" data-testid="leaderboard-panel">
           <div className="flex items-center gap-3 mb-5">
             <Trophy size={28} className="text-[#FFD700]" />
             <div>
@@ -274,12 +280,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="space-y-1">
-            {board.top?.map((e) => <LeaderboardRow key={e.rank} entry={e} />)}
+            {board.top?.map((e, index) => (
+              <LeaderboardRow key={e.rank} entry={e} className={`row-animate stagger-${(index % 4) + 1}`} />
+            ))}
             {board.you && !board.top?.some(t => t.is_you) && (
               <>
                 <div className="font-pixel text-[8px] tracking-widest text-[var(--muted)] mt-3 mb-1 px-3">YOUR RANK</div>
                 <div className="border border-[var(--purple)] rounded">
-                  <LeaderboardRow entry={board.you} highlighted />
+                  <LeaderboardRow entry={board.you} highlighted className="row-animate stagger-4" />
                 </div>
               </>
             )}
@@ -287,19 +295,19 @@ export default function Dashboard() {
               <>
                 <div className="font-pixel text-[8px] tracking-widest text-[var(--muted)] mt-3 mb-1 px-3">YOUR RANK</div>
                 <div className="border border-[var(--purple)] rounded">
-                  <LeaderboardRow entry={board.you} highlighted />
+                  <LeaderboardRow entry={board.you} highlighted className="row-animate stagger-4" />
                 </div>
               </>
             )}
           </div>
-          <button onClick={() => navigate("/leaderboard")} className="btn-ghost-ll w-full mt-4" data-testid="view-leaderboard">VIEW FULL LEADERBOARD</button>
+          <button onClick={() => navigate("/leaderboard")} className="btn-ghost-ll w-full mt-4 cta-pulse" data-testid="view-leaderboard">VIEW FULL LEADERBOARD</button>
         </div>
       </section>
 
       {/* RACE STATS + BUILD CREW */}
       <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Race Stats */}
-        <div className="card-ll p-5" data-testid="race-stats-panel">
+        <div className="card-ll p-5 card-animate stagger-3" data-testid="race-stats-panel">
           <div className="flex items-center gap-3 mb-5">
             <Gauge size={28} className="text-[var(--amber)]" />
             <div>
@@ -308,25 +316,25 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-1">
               <div className="label-ll mb-2">TASKS COMPLETED</div>
               <div className="stat-num">{stats?.tasks_completed ?? 0}<span className="text-[var(--muted)] text-[14px]"> /{tasksGoalLabel}</span></div>
               <div className="w-full bg-[var(--border)] h-1.5 rounded mt-2 overflow-hidden">
                 <div className="bg-[var(--purple)] h-full" style={{ width: `${tasksProgress}%` }} />
               </div>
             </div>
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-2">
               <div className="label-ll mb-2">LP EARNED</div>
               <div className="stat-num">{(stats?.lap_points ?? 0).toLocaleString()}</div>
             </div>
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-3">
               <div className="label-ll mb-2">CURRENT RANK</div>
               <div className="stat-num">#{stats?.current_rank ?? "—"}</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">TOP {stats?.top_percentile ?? "—"}%</div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-1">
               <div className="label-ll mb-2">REFERRALS</div>
               <div className="flex items-center gap-2">
                 <div className="stat-num">{stats?.referrals_count ?? 0}</div>
@@ -334,23 +342,23 @@ export default function Dashboard() {
               </div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">RIDERS</div>
             </div>
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-2">
               <div className="label-ll mb-2">DAILY STREAK</div>
               <div className="flex items-center gap-2">
                 <div className="stat-num">{stats?.daily_streak ?? 0} <span className="text-[14px] text-[var(--muted)]">DAYS</span></div>
                 <span className="flame text-[var(--amber)]"><Flame size={16} /></span>
               </div>
             </div>
-            <div className="card-ll-inner p-4">
+            <div className="card-ll-inner p-4 row-animate stagger-3">
               <div className="label-ll mb-2">JOINED ON</div>
               <div className="font-pixel text-[14px] tracking-widest text-[var(--purple-bright)]">{joinedDate}</div>
             </div>
           </div>
-          <button onClick={() => navigate("/leaderboard")} className="btn-ghost-ll w-full mt-4" data-testid="view-stats">VIEW DETAILED STATS</button>
+          <button onClick={() => navigate("/leaderboard")} className="btn-ghost-ll w-full mt-4 cta-pulse" data-testid="view-stats">VIEW DETAILED STATS</button>
         </div>
 
         {/* Build Crew */}
-        <div className="card-ll p-5" data-testid="crew-panel">
+        <div className="card-ll p-5 card-animate stagger-4" data-testid="crew-panel">
           <div className="flex items-center gap-3 mb-5">
             <Users size={28} className="text-[var(--purple-bright)]" />
             <div>
@@ -375,17 +383,17 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div className="card-ll-inner p-3">
+            <div className="card-ll-inner p-3 row-animate stagger-1">
               <div className="label-ll mb-1">CREW INVITES</div>
               <div className="stat-num">{refs?.crew_invites ?? 0}</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">RIDERS</div>
             </div>
-            <div className="card-ll-inner p-3">
+            <div className="card-ll-inner p-3 row-animate stagger-2">
               <div className="label-ll mb-1">PENDING</div>
               <div className="stat-num">{refs?.pending_invites ?? 0}</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">RIDERS</div>
             </div>
-            <div className="card-ll-inner p-3">
+            <div className="card-ll-inner p-3 row-animate stagger-3">
               <div className="label-ll mb-1">TOTAL EARNED</div>
               <div className="stat-num">{refs?.total_earned ?? 0} LP</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] mt-1">REFERRALS</div>
@@ -399,7 +407,7 @@ export default function Dashboard() {
           <a
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Join me on LastLap and earn Lap Points! " + (refs?.referral_link || ""))}`}
             target="_blank" rel="noreferrer"
-            className="btn-primary-ll w-full flex items-center justify-center gap-2 py-3"
+            className="btn-primary-ll w-full flex items-center justify-center gap-2 py-3 cta-pulse"
             data-testid="share-x"
           >
             <span>SHARE ON</span> <XLogo size={14} />
