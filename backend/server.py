@@ -250,6 +250,12 @@ class OtpRequiredOut(BaseModel):
     debug_code: Optional[str] = None
 
 
+class ProfileUpdateIn(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=20)
+    display_name: Optional[str] = Field(None, min_length=2, max_length=32)
+    avatar_color: Optional[str] = Field(None, regex=r"^#[0-9a-fA-F]{6}$")
+
+
 class TaskOut(BaseModel):
     id: str
     title: str
@@ -426,6 +432,36 @@ async def otp_verify(data: OtpVerifyIn):
 @api_router.get("/auth/me")
 async def me(current=Depends(get_current_user)):
     return current
+
+
+@api_router.patch("/users/me")
+async def update_profile(data: ProfileUpdateIn, current=Depends(get_current_user)):
+    update = {}
+
+    if data.username:
+        new_username = data.username.lower()
+        if new_username != current.get("username"):
+            if await db.users.find_one({"username": new_username}):
+                raise HTTPException(status_code=400, detail="Username already taken")
+            update["username"] = new_username
+
+    if data.display_name is not None:
+        display_name = data.display_name.strip()
+        if not display_name:
+            raise HTTPException(status_code=400, detail="Display name is required")
+        if display_name != current.get("display_name"):
+            update["display_name"] = display_name
+
+    if data.avatar_color:
+        if data.avatar_color != current.get("avatar_color"):
+            update["avatar_color"] = data.avatar_color
+
+    if not update:
+        return {"ok": True, "user": sanitize_user(current)}
+
+    await db.users.update_one({"id": current["id"]}, {"$set": update})
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0})
+    return {"ok": True, "user": sanitize_user(user)}
 
 
 @api_router.post("/auth/logout")

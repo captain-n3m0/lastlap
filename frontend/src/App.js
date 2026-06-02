@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Leaderboard from "./pages/Leaderboard";
 import TasksPage from "./pages/TasksPage";
 import About from "./pages/About";
+import Profile from "./pages/Profile";
 import LoadingScreen from "./components/LoadingScreen";
 import { Toaster } from "sonner";
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/" element={<Protected><Dashboard /></Protected>} />
             <Route path="/leaderboard" element={<Protected><Leaderboard /></Protected>} />
             <Route path="/tasks" element={<Protected><TasksPage /></Protected>} />
+            <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { ChevronDown, LogOut, User, Wallet } from "lucide-react";
+import { ChevronDown, LogOut, Settings, User, Wallet } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { truncateAddress } from "../lib/wallet";
 import WalletButton from "./WalletButton";
@@ -80,6 +80,10 @@ export default function Navbar() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-left text-white/90 hover:bg-[var(--bg-card-2)] rounded font-pixel text-[10px] tracking-widest" data-testid="dropdown-profile">
                 <User size={14} /> RIDER GARAGE
               </button>
+              <Link to="/profile" onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-white/90 hover:bg-[var(--bg-card-2)] rounded font-pixel text-[10px] tracking-widest" data-testid="dropdown-settings">
+                <Settings size={14} /> PROFILE SETTINGS
+              </Link>
               <button onClick={() => { setOpen(false); logout(); navigate("/login"); }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left text-[var(--red)] hover:bg-[var(--bg-card-2)] rounded font-pixel text-[10px] tracking-widest" data-testid="logout-button">
                 <LogOut size={14} /> LOG OUT
