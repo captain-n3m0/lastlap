@@ -315,7 +315,28 @@ body {
     from { opacity: 0; transform: translateY(16px) scale(0.985); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
-.page-transition { animation: page-enter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes page-sweep {
+    0% { opacity: 0; transform: translateX(-20%); }
+    35% { opacity: 0.75; }
+    100% { opacity: 0; transform: translateX(20%); }
+}
+.page-transition {
+    position: relative;
+    animation: page-enter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.page-transition::after {
+    content: '';
+    position: fixed;
+    inset: -20% -20% -20% -20%;
+    background:
+        linear-gradient(120deg, transparent 35%, rgba(139, 92, 246, 0.25) 50%, transparent 65%),
+        radial-gradient(600px circle at 15% 20%, rgba(59, 130, 246, 0.25), transparent 60%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    animation: page-sweep 0.8s ease-out both;
+}
 
 @keyframes nav-slide {
     from { opacity: 0; transform: translateY(-8px); }
@@ -531,6 +552,20 @@ body {
 
 .feature-tilt { transition: transform 0.2s ease, filter 0.2s ease; }
 .feature-tilt:hover { transform: translateY(-2px) rotate(-1deg); filter: brightness(1.1); }
+
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(139, 92, 246, 0.25);
+}
+.hover-glow {
+    transition: filter 0.2s ease;
+}
+.hover-glow:hover {
+    filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.45));
+}
 
 /* Brush stroke decoration under headings */
 .brush-underline::after {
@@ -781,11 +816,18 @@ body {
     .feature-tilt {
         transition: none;
     }
+    .hover-lift,
+    .hover-glow {
+        transition: none;
+    }
     .card-ll::after,
     .card-ll-inner::after,
     .btn-primary-ll::after,
     .btn-ghost-ll::after {
         animation: none;
         transition: none;
+    }
+    .page-transition::after {
+        animation: none;
     }
 }

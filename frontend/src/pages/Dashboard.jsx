@@ -87,7 +87,7 @@ function RankBadge({ rank }) {
 
 function LeaderboardRow({ entry, highlighted, className = "" }) {
   return (
-    <div className={`px-3 py-2.5 flex items-center gap-3 ${highlighted ? "card-ll-inner border-[var(--purple)]" : ""} ${className}`}
+    <div className={`px-3 py-2.5 flex items-center gap-3 hover-lift hover-glow ${highlighted ? "card-ll-inner border-[var(--purple)]" : ""} ${className}`}
       data-testid={`leaderboard-row-${entry.rank}`}>
       <RankBadge rank={entry.rank} />
       <div className="avatar-pixel" style={{ background: entry.avatar_color }}>{entry.username.charAt(0).toUpperCase()}</div>

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 function Stat({ icon: Icon, value, label, color, className = "" }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`} data-testid={`hero-stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+    <div className={`flex items-center gap-3 hover-lift ${className}`} data-testid={`hero-stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <Icon size={22} style={{ color }} className="icon-wiggle" />
       <div>
         <div className="font-mono-crt font-bold text-[20px] leading-none text-white tracking-tight">{value}</div>
@@ -23,7 +23,7 @@ function Stat({ icon: Icon, value, label, color, className = "" }) {
 
 function FeaturePill({ icon: Icon, title, subtitle, className = "" }) {
   return (
-    <div className={`flex-1 flex flex-col items-center text-center gap-2 ${className}`}>
+    <div className={`flex-1 flex flex-col items-center text-center gap-2 hover-lift hover-glow ${className}`}>
       <div className="h-14 flex items-center justify-center icon-wiggle">
         <Icon size={56} />
       </div>

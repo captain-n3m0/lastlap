@@ -51,7 +51,7 @@ export default function Leaderboard() {
           <div className="space-y-1">
             {data.top.map((e, index) => (
               <div key={e.rank}
-                className={`grid grid-cols-[28px_32px_1fr_72px] sm:grid-cols-[40px_40px_1fr_120px_80px_80px] gap-3 px-3 py-3 items-center rounded row-animate stagger-${(index % 6) + 1} ${e.is_you ? "border border-[var(--purple)] bg-[var(--purple)]/5" : "hover:bg-[var(--bg-card-2)]"}`}
+                className={`grid grid-cols-[28px_32px_1fr_72px] sm:grid-cols-[40px_40px_1fr_120px_80px_80px] gap-3 px-3 py-3 items-center rounded row-animate stagger-${(index % 6) + 1} hover-lift hover-glow ${e.is_you ? "border border-[var(--purple)] bg-[var(--purple)]/5" : "hover:bg-[var(--bg-card-2)]"}`}
                 data-testid={`lb-row-${e.rank}`}>
                 <div className="flex items-center justify-center"><RankIcon rank={e.rank} /></div>
                 <div className="avatar-pixel" style={{ background: e.avatar_color }}>{e.username.charAt(0).toUpperCase()}</div>
