@@ -8,6 +8,8 @@ import Footer from "../components/Footer";
 import { Trophy, Flag, TrendingUp, Flame, Gauge, Users, Copy, Award, Shield, Medal } from "lucide-react";
 import CheckeredFlag from "../components/CheckeredFlag";
 import XLogo from "../components/XLogo";
+import TaskPlatformIcon from "../components/TaskPlatformIcon";
+import RacerAvatar from "../components/RacerAvatar";
 
 function StatCard({ icon: Icon, label, value, color = "var(--purple-bright)", testid, className = "" }) {
   return (
@@ -26,11 +28,10 @@ function StatCard({ icon: Icon, label, value, color = "var(--purple-bright)", te
 function TaskItem({ task, onAction, isAuthLoading, className = "" }) {
   const isCompleted = task.status === "completed";
   const isStarted = task.status === "started";
-  const platformIcon = task.platform === "X" ? <XLogo size={14} /> : task.platform === "DISCORD" ? "♣" : task.platform === "WALLET" ? "₿" : task.platform === "EMAIL" ? "✉" : "★";
   return (
     <div className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 ${isCompleted ? "opacity-60" : ""} ${className}`} data-testid={`task-item-${task.id}`}>
       <div className="w-9 h-9 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white text-sm">
-        {platformIcon}
+        <TaskPlatformIcon platform={task.platform} size={15} />
       </div>
       <div className="flex-1 min-w-0 w-full sm:w-auto">
         <div className="font-pixel text-[11px] tracking-widest text-white truncate">{task.title.toUpperCase()}</div>
@@ -90,7 +91,7 @@ function LeaderboardRow({ entry, highlighted, className = "" }) {
     <div className={`px-3 py-2.5 flex items-center gap-3 hover-lift hover-glow ${highlighted ? "card-ll-inner border-[var(--purple)]" : ""} ${className}`}
       data-testid={`leaderboard-row-${entry.rank}`}>
       <RankBadge rank={entry.rank} />
-      <div className="avatar-pixel" style={{ background: entry.avatar_color }}>{entry.username.charAt(0).toUpperCase()}</div>
+      <RacerAvatar user={entry} username={entry.username} size="sm" className="rounded" />
       <div className="flex-1 min-w-0">
         <div className="font-pixel text-[11px] tracking-widest text-white truncate">@{entry.username}</div>
         {highlighted && <div className="font-pixel text-[8px] tracking-widest text-[var(--muted)]">{entry.title}</div>}
@@ -207,8 +208,8 @@ export default function Dashboard() {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative max-w-[1400px] mx-auto px-6 lg:px-10 pt-10 pb-12">
-        <div className="relative rounded-lg overflow-hidden border border-[var(--border)] min-h-[360px] md:min-h-[440px] hero-rail">
+      <section className="relative max-w-[1400px] mx-auto px-6 lg:px-10 pt-6 pb-6">
+        <div className="relative rounded-lg overflow-hidden border border-[var(--border)] min-h-[260px] md:min-h-[320px] hero-rail">
           {/* Background artwork with fade */}
           <img
             src="/hero-art.png"
@@ -222,8 +223,8 @@ export default function Dashboard() {
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
           {/* Foreground content */}
-          <div className="relative z-10 px-6 md:px-10 py-10 md:py-14 max-w-[680px] fade-in-up">
-            <h1 className="font-brush text-[44px] sm:text-[64px] md:text-[88px] leading-[0.95] mb-5 hero-title stagger-1" data-testid="hero-title">
+          <div className="relative z-10 px-6 md:px-10 py-8 md:py-10 max-w-[680px] fade-in-up">
+            <h1 className="font-brush text-[44px] sm:text-[60px] md:text-[76px] leading-[0.95] mb-4 hero-title stagger-1" data-testid="hero-title">
               <span className="text-white">RACER </span>
               <span className="text-[var(--purple)]">HUB</span>
             </h1>
@@ -243,7 +244,7 @@ export default function Dashboard() {
       </section>
 
       {/* DAILY TASKS + LEADERBOARD */}
-      <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Race Tasks */}
         <div className="card-ll p-5 card-animate stagger-1" data-testid="daily-tasks-panel">
           <div className="flex items-start justify-between mb-5">
@@ -305,7 +306,7 @@ export default function Dashboard() {
       </section>
 
       {/* RACE STATS + BUILD CREW */}
-      <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="max-w-[1400px] mx-auto px-6 lg:px-10 mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Race Stats */}
         <div className="card-ll p-5 card-animate stagger-3" data-testid="race-stats-panel">
           <div className="flex items-center gap-3 mb-5">

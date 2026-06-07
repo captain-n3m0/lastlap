@@ -4,6 +4,7 @@ import { ChevronDown, LogOut, Settings, User, Wallet } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { truncateAddress } from "../lib/wallet";
 import WalletButton from "./WalletButton";
+import RacerAvatar from "./RacerAvatar";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -28,33 +29,24 @@ export default function Navbar() {
     );
   };
 
-  const initial = (user?.username || user?.display_name || "R").charAt(0).toUpperCase();
-  // Local avatar — deterministic colored circle SVG (no external service)
-  const avatarBg = user?.avatar_color || "#8B5CF6";
-  const avatarSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0' stop-color='${avatarBg}'/><stop offset='1' stop-color='#0a0a10'/></linearGradient></defs><rect width='40' height='40' fill='url(%23g)'/><text x='20' y='27' text-anchor='middle' font-family='monospace' font-weight='700' font-size='20' fill='white'>${initial}</text></svg>`
-  )}`;
-  const avatarUrl = avatarSvg;
-
   return (
     <nav className="w-full border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-md sticky top-0 z-50 nav-slide" data-testid="main-navbar">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <Link to="/" className="font-brush text-3xl tracking-tight neon-text" data-testid="navbar-logo">
-          <span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span>
+        <Link to="/" className="flex items-center gap-2 font-brush text-3xl tracking-tight neon-text" data-testid="navbar-logo">
+          <img src="/skull-emblem.png" alt="" className="w-9 h-9 object-contain" />
+          <span><span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span></span>
         </Link>
 
         <div className="hidden md:flex items-center gap-2">
           <NavLink to="/tasks" label="RIDER GARAGE" testid="nav-garage" />
           <NavLink to="/about" label="ABOUT" testid="nav-about" />
-          <NavLink to="/leaderboard" label="COMMUNITY" testid="nav-community" />
+          <NavLink to="/leaderboard" label="LEADERBOARD" testid="nav-community" />
         </div>
 
         <div className="relative" ref={menuRef}>
           <button onClick={() => setOpen(v => !v)} data-testid="profile-menu-button"
             className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--purple)] flex-shrink-0 profile-ring" style={{ background: user?.avatar_color || "#8B5CF6" }}>
-              <img src={avatarUrl} alt={initial} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            </div>
+            <RacerAvatar user={user} size="md" className="profile-ring" />
             <div className="hidden sm:block text-left">
               <div className="font-pixel text-[11px] tracking-widest text-white">@{user?.username || "rider"}</div>
               <div className="font-pixel text-[9px] tracking-widest text-[var(--amber)]">{user?.title || "ROOKIE RACER"}</div>

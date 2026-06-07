@@ -3,6 +3,7 @@ import api from "../lib/api";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Trophy, Medal, Award } from "lucide-react";
+import RacerAvatar from "../components/RacerAvatar";
 
 function RankIcon({ rank }) {
   if (rank === 1) return <Trophy size={18} className="text-[#FFD700]" />;
@@ -54,7 +55,7 @@ export default function Leaderboard() {
                 className={`grid grid-cols-[28px_32px_1fr_72px] sm:grid-cols-[40px_40px_1fr_120px_80px_80px] gap-3 px-3 py-3 items-center rounded row-animate stagger-${(index % 6) + 1} hover-lift hover-glow ${e.is_you ? "border border-[var(--purple)] bg-[var(--purple)]/5" : "hover:bg-[var(--bg-card-2)]"}`}
                 data-testid={`lb-row-${e.rank}`}>
                 <div className="flex items-center justify-center"><RankIcon rank={e.rank} /></div>
-                <div className="avatar-pixel" style={{ background: e.avatar_color }}>{e.username.charAt(0).toUpperCase()}</div>
+                <RacerAvatar user={e} username={e.username} size="sm" />
                 <div className="min-w-0">
                   <div className="font-pixel text-[12px] tracking-widest text-white truncate">@{e.username}{e.is_you && <span className="text-[var(--purple-bright)] ml-2">(YOU)</span>}</div>
                   <div className="font-pixel text-[8px] tracking-widest text-[var(--muted)] truncate">{e.title}</div>

@@ -45,6 +45,63 @@ security = HTTPBearer(auto_error=False)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+AVATAR_COLORS = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#EC4899"]
+AVATAR_PRESETS = ["helmet", "bolt", "flag", "skull", "wheel", "initial"]
+DAILY_CHECKIN_TASK_ID = "daily-checkin"
+DEFAULT_TASKS = [
+    {
+        "id": DAILY_CHECKIN_TASK_ID,
+        "title": "Daily Check-In",
+        "description": "Roll through the pit wall once a day.",
+        "platform": "CHECKIN",
+        "reward_lp": 25,
+        "external_url": "#",
+        "order": 0,
+        "is_active": True,
+        "cadence": "daily",
+    },
+    {
+        "id": "connect-wallet",
+        "title": "Connect Wallet",
+        "description": "Link your wallet to your rider profile.",
+        "platform": "WALLET",
+        "reward_lp": 100,
+        "external_url": "#",
+        "order": 10,
+        "is_active": True,
+    },
+    {
+        "id": "join-discord",
+        "title": "Join Discord",
+        "description": "Join the LastLap Discord garage.",
+        "platform": "DISCORD",
+        "reward_lp": 75,
+        "external_url": "#",
+        "order": 20,
+        "is_active": True,
+    },
+    {
+        "id": "follow-x",
+        "title": "Follow LastLap on X",
+        "description": "Follow the official LastLap account.",
+        "platform": "X",
+        "reward_lp": 75,
+        "external_url": "#",
+        "order": 30,
+        "is_active": True,
+    },
+    {
+        "id": "invite-crew",
+        "title": "Invite Your Crew",
+        "description": "Share your referral link with another rider.",
+        "platform": "LASTLAP",
+        "reward_lp": 100,
+        "external_url": "#",
+        "order": 40,
+        "is_active": True,
+    },
+]
+
 
 # --- Helpers ---
 def hash_password(password: str) -> str:
@@ -101,6 +158,52 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         return datetime.fromisoformat(value)
     except Exception:
         return None
+
+
+def _utc_date_key(value: Optional[datetime] = None) -> str:
+    dt = value or _utcnow()
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).date().isoformat()
+
+
+def _date_key_from_iso(value: Optional[str]) -> Optional[str]:
+    dt = _parse_dt(value)
+    if not dt:
+        return None
+    return _utc_date_key(dt)
+
+
+def _is_daily_task(task: dict) -> bool:
+    return task.get("cadence") == "daily" or task.get("id") == DAILY_CHECKIN_TASK_ID
+
+
+def _user_task_status(task: dict, user_task: Optional[dict]) -> str:
+    if not user_task:
+        return "available"
+    status = user_task.get("status", "available")
+    if not _is_daily_task(task):
+        return status
+    today = _utc_date_key()
+    if status == "completed" and _date_key_from_iso(user_task.get("completed_at")) == today:
+        return "completed"
+    if status == "started" and _date_key_from_iso(user_task.get("started_at")) == today:
+        return "started"
+    return "available"
+
+
+def _validate_avatar_url(value: Optional[str]) -> str:
+    avatar_url = (value or "").strip()
+    if not avatar_url:
+        return ""
+    allowed = (
+        avatar_url.startswith("data:image/"),
+        avatar_url.startswith("https://"),
+        avatar_url.startswith("http://"),
+    )
+    if not any(allowed):
+        raise HTTPException(status_code=400, detail="Avatar image must be an image data URL or http(s) URL")
+    return avatar_url
 
 
 def _otp_resend_after(last_sent: Optional[str]) -> int:
@@ -253,7 +356,9 @@ class OtpRequiredOut(BaseModel):
 class ProfileUpdateIn(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=20)
     display_name: Optional[str] = Field(None, min_length=2, max_length=32)
-    avatar_color: Optional[str] = Field(None, regex=r"^#[0-9a-fA-F]{6}$")
+    avatar_color: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+    avatar_preset: Optional[str] = Field(None, pattern=r"^(helmet|bolt|flag|skull|wheel|initial)$")
+    avatar_url: Optional[str] = Field(None, max_length=200000)
 
 
 class TaskOut(BaseModel):
@@ -272,6 +377,8 @@ class LeaderboardEntry(BaseModel):
     tasks_completed: int
     daily_streak: int
     avatar_color: str
+    avatar_preset: str = "helmet"
+    avatar_url: Optional[str] = None
     is_you: bool = False
 
 
@@ -297,7 +404,6 @@ async def register(data: RegisterIn):
             break
 
     user_id = str(uuid.uuid4())
-    avatar_colors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#EC4899"]
     now_iso = datetime.now(timezone.utc).isoformat()
     user = {
         "id": user_id,
@@ -312,7 +418,8 @@ async def register(data: RegisterIn):
         "daily_streak": 0,
         "referral_code": code,
         "referred_by": referred_by,
-        "avatar_color": random.choice(avatar_colors),
+        "avatar_color": random.choice(AVATAR_COLORS),
+        "avatar_preset": random.choice(AVATAR_PRESETS),
         "joined_on": now_iso,
         "last_active": now_iso,
         "email_verified": False,
@@ -437,6 +544,7 @@ async def me(current=Depends(get_current_user)):
 @api_router.patch("/users/me")
 async def update_profile(data: ProfileUpdateIn, current=Depends(get_current_user)):
     update = {}
+    fields_set = getattr(data, "model_fields_set", getattr(data, "__fields_set__", set()))
 
     if data.username:
         new_username = data.username.lower()
@@ -455,6 +563,15 @@ async def update_profile(data: ProfileUpdateIn, current=Depends(get_current_user
     if data.avatar_color:
         if data.avatar_color != current.get("avatar_color"):
             update["avatar_color"] = data.avatar_color
+
+    if data.avatar_preset:
+        if data.avatar_preset != current.get("avatar_preset", "helmet"):
+            update["avatar_preset"] = data.avatar_preset
+
+    if "avatar_url" in fields_set:
+        avatar_url = _validate_avatar_url(data.avatar_url)
+        if avatar_url != current.get("avatar_url", ""):
+            update["avatar_url"] = avatar_url
 
     if not update:
         return {"ok": True, "user": sanitize_user(current)}
@@ -544,7 +661,6 @@ async def wallet_verify(data: WalletVerifyIn):
     user = await db.users.find_one({"wallet_address": address}, {"_id": 0})
     if not user:
         # Create wallet-only user
-        avatar_colors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#EC4899"]
         while True:
             code = gen_referral_code()
             if not await db.users.find_one({"referral_code": code}):
@@ -570,7 +686,8 @@ async def wallet_verify(data: WalletVerifyIn):
             "daily_streak": 0,
             "referral_code": code,
             "referred_by": None,
-            "avatar_color": random.choice(avatar_colors),
+            "avatar_color": random.choice(AVATAR_COLORS),
+            "avatar_preset": random.choice(AVATAR_PRESETS),
             "wallet_address": address,
             "wallet_chain_id": data.chain_id,
             "joined_on": datetime.now(timezone.utc).isoformat(),
@@ -638,11 +755,12 @@ async def list_tasks(current=Depends(get_current_user)):
     tasks = await db.tasks.find({}, {"_id": 0}).sort("order", 1).to_list(100)
     user_tasks = await db.user_tasks.find({"user_id": current["id"]}, {"_id": 0}).to_list(500)
     status_map = {ut["task_id"]: ut["status"] for ut in user_tasks}
+    task_map = {ut["task_id"]: ut for ut in user_tasks}
     out = []
     for t in tasks:
         out.append({
             **t,
-            "status": status_map.get(t["id"], "available"),
+            "status": _user_task_status(t, task_map.get(t["id"])) if _is_daily_task(t) else status_map.get(t["id"], "available"),
         })
     return out
 
@@ -653,17 +771,26 @@ async def start_task(task_id: str, current=Depends(get_current_user)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     existing = await db.user_tasks.find_one({"user_id": current["id"], "task_id": task_id})
-    if existing:
-        if existing["status"] == "completed":
+    current_status = _user_task_status(task, existing)
+    if existing and current_status != "available":
+        if current_status == "completed":
             raise HTTPException(status_code=400, detail="Task already completed")
-        return {"status": existing["status"], "task_id": task_id}
-    await db.user_tasks.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": current["id"],
-        "task_id": task_id,
-        "status": "started",
-        "started_at": datetime.now(timezone.utc).isoformat(),
-    })
+        return {"status": current_status, "task_id": task_id}
+
+    started_at = datetime.now(timezone.utc).isoformat()
+    if existing:
+        await db.user_tasks.update_one(
+            {"user_id": current["id"], "task_id": task_id},
+            {"$set": {"status": "started", "started_at": started_at}, "$unset": {"completed_at": ""}},
+        )
+    else:
+        await db.user_tasks.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current["id"],
+            "task_id": task_id,
+            "status": "started",
+            "started_at": started_at,
+        })
     return {"status": "started", "task_id": task_id, "external_url": task.get("external_url", "#")}
 
 
@@ -673,10 +800,11 @@ async def complete_task(task_id: str, current=Depends(get_current_user)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     existing = await db.user_tasks.find_one({"user_id": current["id"], "task_id": task_id})
-    if existing and existing["status"] == "completed":
+    if existing and _user_task_status(task, existing) == "completed":
         raise HTTPException(status_code=400, detail="Task already completed")
     reward = int(task.get("reward_lp", 100))
-    now = datetime.now(timezone.utc).isoformat()
+    now_dt = datetime.now(timezone.utc)
+    now = now_dt.isoformat()
     if existing:
         await db.user_tasks.update_one(
             {"user_id": current["id"], "task_id": task_id},
@@ -691,10 +819,16 @@ async def complete_task(task_id: str, current=Depends(get_current_user)):
             "started_at": now,
             "completed_at": now,
         })
-    await db.users.update_one(
-        {"id": current["id"]},
-        {"$inc": {"lap_points": reward, "tasks_completed": 1}},
-    )
+
+    user_update = {"$inc": {"lap_points": reward, "tasks_completed": 1}}
+    if _is_daily_task(task):
+        today = _utc_date_key(now_dt)
+        yesterday = (now_dt - timedelta(days=1)).date().isoformat()
+        current_streak = int(current.get("daily_streak", 0))
+        next_streak = current_streak + 1 if current.get("last_checkin_date") == yesterday else 1
+        user_update["$set"] = {"daily_streak": next_streak, "last_checkin_date": today}
+
+    await db.users.update_one({"id": current["id"]}, user_update)
     user = await db.users.find_one({"id": current["id"]}, {"_id": 0, "password_hash": 0})
     return {"ok": True, "reward_lp": reward, "user": sanitize_user(user)}
 
@@ -717,6 +851,8 @@ async def leaderboard(limit: int = 10, current=Depends(get_current_user)):
             "tasks_completed": u.get("tasks_completed", 0),
             "daily_streak": u.get("daily_streak", 0),
             "avatar_color": u.get("avatar_color", "#8B5CF6"),
+            "avatar_preset": u.get("avatar_preset", "helmet"),
+            "avatar_url": u.get("avatar_url"),
             "title": u.get("title", "ROOKIE RACER"),
             "is_you": u["id"] == current["id"],
         }
@@ -843,6 +979,16 @@ async def seed():
     await db.user_tasks.create_index([("user_id", 1), ("task_id", 1)], unique=True)
     await db.wallet_nonces.create_index("nonce")
 
+    await db.users.update_many(
+        {"avatar_preset": {"$exists": False}},
+        {"$set": {"avatar_preset": "helmet"}},
+    )
+
+    task_count = await db.tasks.count_documents({})
+    tasks_to_seed = DEFAULT_TASKS if task_count == 0 else [DEFAULT_TASKS[0]]
+    for task in tasks_to_seed:
+        await db.tasks.update_one({"id": task["id"]}, {"$set": task}, upsert=True)
+
     # Admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@lastlap.com")
     admin_pw = os.environ.get("ADMIN_PASSWORD", "LastLap2025!")
@@ -866,6 +1012,7 @@ async def seed():
             "referral_code": code,
             "referred_by": None,
             "avatar_color": "#8B5CF6",
+            "avatar_preset": "helmet",
             "joined_on": datetime.now(timezone.utc).isoformat(),
         })
     elif not verify_password(admin_pw, existing_admin["password_hash"]):

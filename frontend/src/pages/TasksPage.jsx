@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import XLogo from "../components/XLogo";
+import TaskPlatformIcon from "../components/TaskPlatformIcon";
 
 export default function TasksPage() {
   const { refreshUser } = useAuth();
@@ -58,13 +58,12 @@ export default function TasksPage() {
 
         <div className="card-ll p-5 space-y-2 card-animate">
           {tasks.map((t, index) => {
-            const platformIcon = t.platform === "X" ? <XLogo size={14} /> : t.platform === "DISCORD" ? "♣" : t.platform === "WALLET" ? "₿" : t.platform === "EMAIL" ? "✉" : "★";
             const done = t.status === "completed";
             const started = t.status === "started";
             return (
               <div key={t.id} className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 row-animate stagger-${(index % 6) + 1} ${done ? "opacity-60" : ""}`} data-testid={`task-row-${t.id}`}>
                 <div className="w-10 h-10 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white flex-shrink-0">
-                  {platformIcon}
+                  <TaskPlatformIcon platform={t.platform} size={16} />
                 </div>
                 <div className="flex-1 min-w-0 w-full sm:w-auto">
                   <div className="font-pixel text-[12px] tracking-widest text-white">{t.title.toUpperCase()}</div>

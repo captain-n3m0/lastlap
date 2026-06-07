@@ -678,6 +678,19 @@ body {
 .corner-bracket.br { bottom: 4px; right: 4px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
 
 /* Avatar circle */
+.racer-avatar {
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+    border: 2px solid var(--purple);
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.22), 0 0 18px rgba(139, 92, 246, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
 .avatar-pixel {
     width: 32px;
     height: 32px;
