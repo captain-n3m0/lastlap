@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import TaskPlatformIcon from "../components/TaskPlatformIcon";
+import TaskPlatformIcon, { TASK_ICON_OPTIONS } from "../components/TaskPlatformIcon";
 import RacerAvatar from "../components/RacerAvatar";
 import { useAuth } from "../contexts/AuthContext";
 import api, { formatApiErrorDetail } from "../lib/api";
@@ -31,6 +31,7 @@ const emptyTask = {
   title: "",
   description: "",
   platform: "LASTLAP",
+  icon: "",
   reward_lp: 100,
   external_url: "#",
   order: 100,
@@ -375,7 +376,7 @@ export default function AdminDashboard() {
                       <div key={task.id} className="border border-[var(--border)] rounded-lg p-3 flex flex-col lg:flex-row lg:items-center gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-10 h-10 rounded bg-black/40 border border-[var(--border)] flex items-center justify-center">
-                            <TaskPlatformIcon platform={task.platform} size={16} />
+                            <TaskPlatformIcon platform={task.platform} icon={task.icon} size={16} />
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
@@ -439,6 +440,14 @@ export default function AdminDashboard() {
                         <select value={taskForm.cadence} onChange={taskField("cadence")} className="input-ll">
                           <option value="once">ONCE</option>
                           <option value="daily">DAILY</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-ll block mb-2">ICON</label>
+                        <select value={taskForm.icon || ""} onChange={taskField("icon")} className="input-ll">
+                          {TASK_ICON_OPTIONS.map((option) => (
+                            <option key={option.value || "auto"} value={option.value}>{option.label}</option>
+                          ))}
                         </select>
                       </div>
                       <div>

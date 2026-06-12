@@ -91,6 +91,7 @@ DEFAULT_TASKS = [
         "title": "Daily Check-In",
         "description": "Roll through the pit wall once a day.",
         "platform": "CHECKIN",
+        "icon": "checkin",
         "reward_lp": 25,
         "external_url": "#",
         "order": 0,
@@ -102,6 +103,7 @@ DEFAULT_TASKS = [
         "title": "Connect Wallet",
         "description": "Link your wallet to your rider profile.",
         "platform": "WALLET",
+        "icon": "wallet",
         "reward_lp": 100,
         "external_url": "#",
         "order": 10,
@@ -112,8 +114,9 @@ DEFAULT_TASKS = [
         "title": "Join Discord",
         "description": "Join the LastLap Discord garage.",
         "platform": "DISCORD",
+        "icon": "discord",
         "reward_lp": 75,
-        "external_url": "#",
+        "external_url": "https://discord.gg/NkbhjeNjdT",
         "order": 20,
         "is_active": True,
     },
@@ -122,8 +125,9 @@ DEFAULT_TASKS = [
         "title": "Follow LastLap on X",
         "description": "Follow the official LastLap account.",
         "platform": "X",
+        "icon": "x",
         "reward_lp": 75,
-        "external_url": "#",
+        "external_url": "https://x.com/lastlapdotfun",
         "order": 30,
         "is_active": True,
     },
@@ -132,6 +136,7 @@ DEFAULT_TASKS = [
         "title": "Invite Your Crew",
         "description": "Share your referral link with another rider.",
         "platform": "LASTLAP",
+        "icon": "referral",
         "reward_lp": 100,
         "external_url": "#",
         "order": 40,
@@ -506,6 +511,7 @@ class TaskOut(BaseModel):
     title: str
     description: str
     platform: str
+    icon: Optional[str] = None
     reward_lp: int
     status: str  # "available" | "started" | "completed"
 
@@ -515,6 +521,7 @@ class AdminTaskIn(BaseModel):
     title: str = Field(min_length=3, max_length=80)
     description: str = Field(min_length=3, max_length=240)
     platform: str = Field(min_length=1, max_length=24)
+    icon: Optional[str] = Field(None, max_length=40, pattern=r"^[a-z0-9-]*$")
     reward_lp: int = Field(ge=0, le=100000)
     external_url: Optional[str] = Field("#", max_length=500)
     order: int = Field(100, ge=0, le=10000)
@@ -526,6 +533,7 @@ class AdminTaskPatch(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=80)
     description: Optional[str] = Field(None, min_length=3, max_length=240)
     platform: Optional[str] = Field(None, min_length=1, max_length=24)
+    icon: Optional[str] = Field(None, max_length=40, pattern=r"^[a-z0-9-]*$")
     reward_lp: Optional[int] = Field(None, ge=0, le=100000)
     external_url: Optional[str] = Field(None, max_length=500)
     order: Optional[int] = Field(None, ge=0, le=10000)
@@ -1340,6 +1348,8 @@ def _normalize_task_payload(payload: dict, task_id: Optional[str] = None) -> dic
     normalized = dict(payload)
     if "platform" in normalized and normalized["platform"] is not None:
         normalized["platform"] = normalized["platform"].strip().upper()
+    if "icon" in normalized and normalized["icon"] is not None:
+        normalized["icon"] = normalized["icon"].strip().lower()
     if "title" in normalized and normalized["title"] is not None:
         normalized["title"] = normalized["title"].strip()
     if "description" in normalized and normalized["description"] is not None:
@@ -1745,6 +1755,17 @@ async def seed():
     tasks_to_seed = DEFAULT_TASKS if task_count == 0 else [DEFAULT_TASKS[0]]
     for task in tasks_to_seed:
         await db.tasks.update_one({"id": task["id"]}, {"$set": task}, upsert=True)
+    for task in DEFAULT_TASKS:
+        if task.get("icon"):
+            await db.tasks.update_one(
+                {"id": task["id"], "$or": [{"icon": {"$exists": False}}, {"icon": ""}]},
+                {"$set": {"icon": task["icon"]}},
+            )
+        if task.get("external_url") and task["external_url"] != "#":
+            await db.tasks.update_one(
+                {"id": task["id"], "$or": [{"external_url": {"$exists": False}}, {"external_url": ""}, {"external_url": "#"}]},
+                {"$set": {"external_url": task["external_url"]}},
+            )
 
     # Admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@lastlap.com")

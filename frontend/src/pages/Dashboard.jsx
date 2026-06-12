@@ -31,7 +31,7 @@ function TaskItem({ task, onAction, isAuthLoading, className = "" }) {
   return (
     <div className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 ${isCompleted ? "opacity-60" : ""} ${className}`} data-testid={`task-item-${task.id}`}>
       <div className="w-9 h-9 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white text-sm">
-        <TaskPlatformIcon platform={task.platform} size={15} />
+        <TaskPlatformIcon platform={task.platform} icon={task.icon} size={15} />
       </div>
       <div className="flex-1 min-w-0 w-full sm:w-auto">
         <div className="font-pixel text-[11px] tracking-widest text-white truncate">{task.title.toUpperCase()}</div>

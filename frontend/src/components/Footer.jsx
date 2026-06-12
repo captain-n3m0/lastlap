@@ -1,14 +1,10 @@
 import { Link } from "react-router-dom";
-import { Github, Instagram, Youtube } from "lucide-react";
 import XLogo from "./XLogo";
 import DiscordLogo from "./DiscordLogo";
 
 const SOCIAL_LINKS = [
-  { label: "X", href: "#", Icon: XLogo },
-  { label: "Discord", href: "#", Icon: DiscordLogo },
-  { label: "GitHub", href: "#", Icon: Github },
-  { label: "Instagram", href: "#", Icon: Instagram },
-  { label: "YouTube", href: "#", Icon: Youtube },
+  { label: "X", href: "https://x.com/lastlapdotfun", Icon: XLogo },
+  { label: "Discord", href: "https://discord.gg/NkbhjeNjdT", Icon: DiscordLogo },
 ];
 
 export default function Footer() {
@@ -38,7 +34,7 @@ export default function Footer() {
           <div className="font-pixel text-[10px] tracking-widest text-white mb-4">FOLLOW US</div>
           <div className="flex items-center gap-2">
             {SOCIAL_LINKS.map(({ label, href, Icon }, i) => (
-              <a key={label} href={href} aria-label={label} className="w-9 h-9 border border-[var(--border)] flex items-center justify-center rounded hover:border-[var(--purple)] hover:bg-[var(--purple)]/10 transition hover-lift hover-glow" data-testid={`social-${i}`}>
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="w-9 h-9 border border-[var(--border)] flex items-center justify-center rounded hover:border-[var(--purple)] hover:bg-[var(--purple)]/10 transition hover-lift hover-glow" data-testid={`social-${i}`}>
                 <Icon size={14} className="text-[var(--muted)] icon-wiggle" />
               </a>
             ))}

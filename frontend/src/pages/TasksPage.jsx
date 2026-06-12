@@ -63,7 +63,7 @@ export default function TasksPage() {
             return (
               <div key={t.id} className={`card-ll-inner px-4 py-3 flex flex-wrap items-center gap-3 sm:gap-4 row-animate stagger-${(index % 6) + 1} ${done ? "opacity-60" : ""}`} data-testid={`task-row-${t.id}`}>
                 <div className="w-10 h-10 rounded bg-black/50 border border-[var(--border)] flex items-center justify-center font-pixel text-white flex-shrink-0">
-                  <TaskPlatformIcon platform={t.platform} size={16} />
+                  <TaskPlatformIcon platform={t.platform} icon={t.icon} size={16} />
                 </div>
                 <div className="flex-1 min-w-0 w-full sm:w-auto">
                   <div className="font-pixel text-[12px] tracking-widest text-white">{t.title.toUpperCase()}</div>
