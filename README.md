@@ -49,16 +49,16 @@ cp backend/.env.example backend/.env
 #   MONGO_URL=<your-atlas-connection-string>
 #   DB_NAME=lastlap_db
 #   JWT_SECRET=<generate with: openssl rand -hex 32>
-#   CORS_ORIGINS=https://yourdomain.com
+#   CORS_ORIGINS=https://lastlap.com
 #   ADMIN_EMAIL=<your admin email>
 #   ADMIN_PASSWORD=<a strong password>
-#   FRONTEND_PUBLIC_URL=https://yourdomain.com
+#   FRONTEND_PUBLIC_URL=https://lastlap.com
 #   X_CONSUMER_KEY=<your X Consumer Key / API Key>          # OAuth 1.0a
 #   X_CONSUMER_SECRET=<your X Consumer Secret / API Secret> # OAuth 1.0a
 #   # Or use OAuth 2.0 credentials instead:
 #   X_OAUTH_CLIENT_ID=<your X OAuth 2.0 client ID>
 #   X_OAUTH_CLIENT_SECRET=<your X OAuth 2.0 client secret>
-#   X_OAUTH_REDIRECT_URI=https://yourdomain.com/oauth/x/callback
+#   X_OAUTH_REDIRECT_URI=https://lastlap.com/oauth/x/callback
 #   X_OAUTH_SCOPES=tweet.read users.read offline.access
 #   TWITTERAPI_IO_API_KEY=<your Twitterapi.io API key> # X task verification
 ```
@@ -66,7 +66,7 @@ cp backend/.env.example backend/.env
 In the X Developer Portal, enable user authentication and add the exact callback URL:
 
 ```text
-https://yourdomain.com/oauth/x/callback
+https://lastlap.com/oauth/x/callback
 ```
 
 For local testing, also add:

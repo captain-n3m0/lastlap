@@ -20,16 +20,22 @@ export function AuthProvider({ children }) {
     };
     const token = localStorage.getItem("ll_token");
     if (!token) {
-      setUser(false);
       await finishLoading();
+      if (!localStorage.getItem("ll_token")) {
+        setUser(false);
+      }
       return;
     }
     try {
       const { data } = await api.get("/auth/me");
-      setUser(data);
+      if (localStorage.getItem("ll_token") === token) {
+        setUser(data);
+      }
     } catch {
-      localStorage.removeItem("ll_token");
-      setUser(false);
+      if (localStorage.getItem("ll_token") === token) {
+        localStorage.removeItem("ll_token");
+        setUser(false);
+      }
     } finally {
       await finishLoading();
     }
@@ -39,11 +45,16 @@ export function AuthProvider({ children }) {
     fetchMe();
   }, [fetchMe]);
 
+  const applyAuthSession = useCallback((data) => {
+    localStorage.setItem("ll_token", data.access_token);
+    setUser(data.user);
+    setLoading(false);
+  }, []);
+
   const login = async (email, password) => {
     try {
       const { data } = await api.post("/auth/login", { email, password });
-      localStorage.setItem("ll_token", data.access_token);
-      setUser(data.user);
+      applyAuthSession(data);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: formatApiErrorDetail(e.response?.data?.detail) || e.message };
@@ -62,8 +73,7 @@ export function AuthProvider({ children }) {
   const verifyOtp = async (email, code) => {
     try {
       const { data } = await api.post("/auth/otp/verify", { email, code });
-      localStorage.setItem("ll_token", data.access_token);
-      setUser(data.user);
+      applyAuthSession(data);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: formatApiErrorDetail(e.response?.data?.detail) || e.message };
@@ -81,8 +91,7 @@ export function AuthProvider({ children }) {
           resendAfter: data.resend_after || 0,
         };
       }
-      localStorage.setItem("ll_token", data.access_token);
-      setUser(data.user);
+      applyAuthSession(data);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: formatApiErrorDetail(e.response?.data?.detail) || e.message };
@@ -104,7 +113,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, requestOtp, verifyOtp, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, requestOtp, verifyOtp, register, logout, refreshUser, applyAuthSession }}>
       {children}
     </AuthContext.Provider>
   );

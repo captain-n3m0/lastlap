@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 export default function XOAuthCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { applyAuthSession, refreshUser } = useAuth();
   const [error, setError] = useState("");
   const handledCallbackRef = useRef("");
   const callbackKey = useMemo(() => params.toString(), [params]);
@@ -40,7 +40,7 @@ export default function XOAuthCallback() {
       }
       try {
         const data = await completeXOAuth(payload);
-        localStorage.setItem("ll_token", data.access_token);
+        applyAuthSession(data);
         await refreshUser();
         toast.success(`WELCOME, @${data.user.username.toUpperCase()}`);
         if (mounted) navigate("/", { replace: true });
@@ -50,7 +50,7 @@ export default function XOAuthCallback() {
     };
     run();
     return () => { mounted = false; };
-  }, [callbackKey, navigate, params, refreshUser]);
+  }, [applyAuthSession, callbackKey, navigate, params, refreshUser]);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] page-transition flex items-center justify-center px-5" data-testid="x-oauth-callback">

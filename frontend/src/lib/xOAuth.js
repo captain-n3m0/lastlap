@@ -8,8 +8,8 @@ export async function startXOAuth({ mode = "signin", referralCode = "" } = {}) {
   window.location.href = data.authorization_url;
 }
 
-export async function completeXOAuth({ code, state }) {
-  const { data } = await api.post("/auth/x/callback", { code, state });
+export async function completeXOAuth(payload) {
+  const { data } = await api.post("/auth/x/callback", payload);
   return data;
 }
 
