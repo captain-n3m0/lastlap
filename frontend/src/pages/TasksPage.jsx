@@ -24,6 +24,11 @@ export default function TasksPage() {
         if (task.external_url && task.external_url !== "#") {
           window.open(task.external_url, "_blank", "noopener");
         }
+        if (task.verification_type) {
+          toast.success("STARTED — COMPLETE ON X, THEN CLAIM", { duration: 3000 });
+          await load();
+          return;
+        }
         toast.success("STARTED — verifying...", { duration: 1500 });
         setTimeout(async () => {
           try {

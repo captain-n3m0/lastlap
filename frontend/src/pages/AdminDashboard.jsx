@@ -37,6 +37,9 @@ const emptyTask = {
   order: 100,
   is_active: true,
   cadence: "once",
+  verification_type: "",
+  verification_target: "",
+  verification_query: "",
 };
 
 function isAdminUser(user) {
@@ -163,7 +166,18 @@ export default function AdminDashboard() {
 
   const taskField = (key) => (e) => {
     const { value, type, checked } = e.target;
-    setTaskForm((prev) => ({ ...prev, [key]: type === "checkbox" ? checked : value }));
+    setTaskForm((prev) => {
+      const next = { ...prev, [key]: type === "checkbox" ? checked : value };
+      if (key === "platform") {
+        if (value === "X" && !prev.verification_type) next.verification_type = "x_follow";
+        if (value !== "X" && prev.verification_type?.startsWith("x_")) {
+          next.verification_type = "";
+          next.verification_target = "";
+          next.verification_query = "";
+        }
+      }
+      return next;
+    });
   };
 
   const resetTaskForm = () => {
@@ -385,6 +399,7 @@ export default function AdminDashboard() {
                                 {task.is_active ? "ACTIVE" : "PAUSED"}
                               </span>
                               {task.cadence === "daily" && <span className="font-pixel text-[8px] tracking-widest px-2 py-1 rounded border border-[var(--amber)] text-[var(--amber)]">DAILY</span>}
+                              {task.verification_type && <span className="font-pixel text-[8px] tracking-widest px-2 py-1 rounded border border-[var(--blue)] text-[var(--blue)]">VERIFY X</span>}
                             </div>
                             <div className="font-mono-crt text-[14px] text-[var(--muted)] truncate">{task.description}</div>
                             <div className="font-pixel text-[9px] tracking-widest text-[var(--muted-2)] mt-1">
@@ -462,6 +477,38 @@ export default function AdminDashboard() {
                     <div>
                       <label className="label-ll block mb-2">EXTERNAL URL</label>
                       <input value={taskForm.external_url} onChange={taskField("external_url")} className="input-ll" />
+                    </div>
+                    <div className="border border-[var(--border)] rounded-lg p-3 space-y-3">
+                      <div className="label-ll">X VERIFICATION</div>
+                      <div>
+                        <label className="label-ll block mb-2">TYPE</label>
+                        <select value={taskForm.verification_type || ""} onChange={taskField("verification_type")} className="input-ll">
+                          <option value="">NONE</option>
+                          <option value="x_follow">FOLLOW ACCOUNT</option>
+                          <option value="x_post">POST SEARCH QUERY</option>
+                          <option value="x_retweet">RETWEET TWEET</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-ll block mb-2">TARGET</label>
+                        <input
+                          value={taskForm.verification_target || ""}
+                          onChange={taskField("verification_target")}
+                          className="input-ll"
+                          placeholder="@account or tweet URL"
+                        />
+                      </div>
+                      {taskForm.verification_type === "x_post" && (
+                        <div>
+                          <label className="label-ll block mb-2">SEARCH QUERY</label>
+                          <textarea
+                            value={taskForm.verification_query || ""}
+                            onChange={taskField("verification_query")}
+                            className="input-ll min-h-[76px] resize-y"
+                            placeholder="@lastlapdotfun OR #LastLap"
+                          />
+                        </div>
+                      )}
                     </div>
                     <label className="flex items-center gap-3 border border-[var(--border)] rounded px-3 py-3">
                       <input type="checkbox" checked={Boolean(taskForm.is_active)} onChange={taskField("is_active")} className="w-4 h-4 accent-[var(--purple)]" />

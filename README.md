@@ -16,6 +16,7 @@ Hetzner, Contabo, AWS EC2, etc.).
 | A domain name | included with most Hostinger plans |
 | A MongoDB database | **MongoDB Atlas** free tier — https://www.mongodb.com/atlas — recommended. (Hostinger doesn't host Mongo natively.) |
 | An X Developer app | Required for "Continue with X" OAuth — https://developer.x.com/en/portal/dashboard |
+| A Twitterapi.io API key | Required for X task verification — https://twitterapi.io |
 
 ---
 
@@ -59,6 +60,7 @@ cp backend/.env.example backend/.env
 #   X_OAUTH_CLIENT_SECRET=<your X OAuth 2.0 client secret>
 #   X_OAUTH_REDIRECT_URI=https://yourdomain.com/oauth/x/callback
 #   X_OAUTH_SCOPES=tweet.read users.read offline.access
+#   TWITTERAPI_IO_API_KEY=<your Twitterapi.io API key> # X task verification
 ```
 
 In the X Developer Portal, enable user authentication and add the exact callback URL:
@@ -187,6 +189,7 @@ come from real data in your database.
 - [ ] `RESEND_API_KEY` / `EMAIL_FROM` — required for OTP email delivery
 - [ ] `CORS_ORIGINS` — set to your real domain (not `*`)
 - [ ] `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` or `X_OAUTH_CLIENT_ID` / `X_OAUTH_CLIENT_SECRET`, plus `X_OAUTH_REDIRECT_URI` — required for X login
+- [ ] `TWITTERAPI_IO_API_KEY` — required for verified X tasks to award LP
 - [ ] MongoDB Atlas IP allowlist — restrict to your server's IP
 
 ---

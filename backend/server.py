@@ -69,6 +69,14 @@ X_CONSUMER_SECRET = _env_first(
     "TWITTER_API_KEY_SECRET",
 )
 X_OAUTH_STATE_TTL_MINUTES = int(os.environ.get("X_OAUTH_STATE_TTL_MINUTES", "10"))
+TWITTERAPI_IO_API_KEY = _env_first(
+    "TWITTERAPI_IO_API_KEY",
+    "TWITTERAPI_IO_KEY",
+    "TWITTERAPIIO_API_KEY",
+)
+TWITTERAPI_IO_BASE_URL = os.environ.get("TWITTERAPI_IO_BASE_URL", "https://api.twitterapi.io").rstrip("/")
+TWITTERAPI_IO_TIMEOUT = int(os.environ.get("TWITTERAPI_IO_TIMEOUT", "15"))
+TWITTERAPI_IO_MAX_PAGES = int(os.environ.get("TWITTERAPI_IO_MAX_PAGES", "5"))
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -128,6 +136,8 @@ DEFAULT_TASKS = [
         "icon": "x",
         "reward_lp": 75,
         "external_url": "https://x.com/lastlapdotfun",
+        "verification_type": "x_follow",
+        "verification_target": "lastlapdotfun",
         "order": 30,
         "is_active": True,
     },
@@ -292,6 +302,35 @@ def _date_key_from_iso(value: Optional[str]) -> Optional[str]:
     if not dt:
         return None
     return _utc_date_key(dt)
+
+
+def _normalize_x_handle(value: Optional[str]) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    if "://" in raw:
+        parsed = urlparse(raw)
+        raw = parsed.path.strip("/").split("/", 1)[0]
+    raw = raw.strip().lstrip("@").split("?", 1)[0].split("/", 1)[0]
+    return re.sub(r"[^a-zA-Z0-9_]", "", raw).lower()[:15]
+
+
+def _extract_x_tweet_id(value: Optional[str]) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    status_match = re.search(r"/status(?:es)?/(\d+)", raw)
+    if status_match:
+        return status_match.group(1)
+    id_match = re.search(r"\b(\d{10,25})\b", raw)
+    return id_match.group(1) if id_match else ""
+
+
+def _task_verification_type(task: dict) -> str:
+    verification_type = (task.get("verification_type") or "").strip().lower()
+    if verification_type in {"", "none"}:
+        return ""
+    return verification_type
 
 
 def _is_daily_task(task: dict) -> bool:
@@ -514,6 +553,9 @@ class TaskOut(BaseModel):
     icon: Optional[str] = None
     reward_lp: int
     status: str  # "available" | "started" | "completed"
+    verification_type: Optional[str] = None
+    verification_target: Optional[str] = None
+    verification_query: Optional[str] = None
 
 
 class AdminTaskIn(BaseModel):
@@ -527,6 +569,9 @@ class AdminTaskIn(BaseModel):
     order: int = Field(100, ge=0, le=10000)
     is_active: bool = True
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet)$")
+    verification_target: Optional[str] = Field(None, max_length=500)
+    verification_query: Optional[str] = Field(None, max_length=500)
 
 
 class AdminTaskPatch(BaseModel):
@@ -539,6 +584,9 @@ class AdminTaskPatch(BaseModel):
     order: Optional[int] = Field(None, ge=0, le=10000)
     is_active: Optional[bool] = None
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet)$")
+    verification_target: Optional[str] = Field(None, max_length=500)
+    verification_query: Optional[str] = Field(None, max_length=500)
 
 
 class AdminUserPatch(BaseModel):
@@ -1356,6 +1404,16 @@ def _normalize_task_payload(payload: dict, task_id: Optional[str] = None) -> dic
         normalized["description"] = normalized["description"].strip()
     if "external_url" in normalized:
         normalized["external_url"] = (normalized.get("external_url") or "#").strip() or "#"
+    if "verification_type" in normalized:
+        verification_type = (normalized.get("verification_type") or "").strip().lower()
+        if verification_type in {"", "none"}:
+            normalized.pop("verification_type", None)
+        else:
+            normalized["verification_type"] = verification_type
+    if "verification_target" in normalized and normalized["verification_target"] is not None:
+        normalized["verification_target"] = normalized["verification_target"].strip()
+    if "verification_query" in normalized and normalized["verification_query"] is not None:
+        normalized["verification_query"] = normalized["verification_query"].strip()
     if normalized.get("cadence") == "once":
         normalized.pop("cadence", None)
     if task_id:
@@ -1435,13 +1493,18 @@ async def admin_update_task(task_id: str, data: AdminTaskPatch, admin=Depends(re
     fields_set = getattr(data, "model_fields_set", set())
     update = data.model_dump(exclude_unset=True, exclude_none=False)
     update = _normalize_task_payload(update)
-    if not update and "cadence" not in fields_set:
+    if not update and "cadence" not in fields_set and "verification_type" not in fields_set:
         return {"ok": True, "task": {**existing, "cadence": existing.get("cadence", "once")}}
     update_doc = {}
     if update:
         update_doc["$set"] = {k: v for k, v in update.items() if not (k == "cadence" and v is None)}
+    unset_fields = {}
     if "cadence" in fields_set and update.get("cadence") is None:
-        update_doc["$unset"] = {"cadence": ""}
+        unset_fields["cadence"] = ""
+    if "verification_type" in fields_set and "verification_type" not in update:
+        unset_fields["verification_type"] = ""
+    if unset_fields:
+        update_doc["$unset"] = unset_fields
     await db.tasks.update_one({"id": task_id}, update_doc)
     task = await db.tasks.find_one({"id": task_id}, {"_id": 0})
     return {"ok": True, "task": {**task, "cadence": task.get("cadence", "once")}}
@@ -1508,6 +1571,205 @@ async def admin_adjust_points(user_id: str, data: AdminPointsAdjustIn, admin=Dep
     return {"ok": True, "user": sanitize_user(user)}
 
 
+# --- Task Verification ---
+def _twitterapi_get(path: str, params: dict) -> dict:
+    if not TWITTERAPI_IO_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Twitter verification is not configured. Set TWITTERAPI_IO_API_KEY on the backend.",
+        )
+    try:
+        resp = requests.get(
+            f"{TWITTERAPI_IO_BASE_URL}{path}",
+            headers={"X-API-Key": TWITTERAPI_IO_API_KEY},
+            params=params,
+            timeout=TWITTERAPI_IO_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        logger.error("TwitterAPI.io request failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Twitter verification service is unavailable")
+
+    try:
+        data = resp.json()
+    except ValueError:
+        logger.error("TwitterAPI.io returned non-JSON response: %s %s", resp.status_code, resp.text[:500])
+        raise HTTPException(status_code=502, detail="Twitter verification returned an invalid response")
+
+    if resp.status_code >= 400 or data.get("status") == "error":
+        message = data.get("message") or data.get("msg") or "Twitter verification failed"
+        logger.error("TwitterAPI.io error: %s %s", resp.status_code, data)
+        raise HTTPException(status_code=502, detail=message)
+    return data
+
+
+def _current_x_username(current: dict) -> str:
+    if not current.get("x_id"):
+        return ""
+    return _normalize_x_handle(current.get("x_username"))
+
+
+def _x_task_target_handle(task: dict) -> str:
+    return _normalize_x_handle(task.get("verification_target") or task.get("external_url"))
+
+
+def _x_task_target_tweet_id(task: dict) -> str:
+    return _extract_x_tweet_id(task.get("verification_target") or task.get("external_url"))
+
+
+def _verify_x_follow(source_username: str, task: dict) -> dict:
+    target_username = _x_task_target_handle(task)
+    if not target_username:
+        raise HTTPException(status_code=500, detail="X follow task is missing a target account")
+    data = _twitterapi_get(
+        "/twitter/user/check_follow_relationship",
+        {
+            "source_user_name": source_username,
+            "target_user_name": target_username,
+        },
+    )
+    is_following = bool((data.get("data") or {}).get("following"))
+    return {
+        "verified": is_following,
+        "evidence": {
+            "type": "x_follow",
+            "source_user_name": source_username,
+            "target_user_name": target_username,
+        },
+    }
+
+
+def _verify_x_post(source_username: str, task: dict, user_task: dict) -> dict:
+    query = (task.get("verification_query") or "").strip()
+    if not query:
+        target = (task.get("verification_target") or "").strip()
+        target_handle = _normalize_x_handle(target)
+        query = f"@{target_handle}" if target_handle else target
+    if not query:
+        raise HTTPException(status_code=500, detail="X post task is missing a verification query")
+
+    started_at = _parse_dt(user_task.get("started_at"))
+    search_query = f"{query} from:{source_username}"
+    if started_at:
+        search_query = f"{search_query} since_time:{int(started_at.timestamp())}"
+
+    cursor = ""
+    pages_checked = 0
+    latest_match = None
+    while pages_checked < TWITTERAPI_IO_MAX_PAGES:
+        params = {"query": search_query, "queryType": "Latest"}
+        if cursor:
+            params["cursor"] = cursor
+        data = _twitterapi_get("/twitter/tweet/advanced_search", params)
+        tweets = data.get("tweets") or []
+        for tweet in tweets:
+            author = _normalize_x_handle((tweet.get("author") or {}).get("userName"))
+            if author == source_username:
+                latest_match = {
+                    "tweet_id": str(tweet.get("id", "")),
+                    "tweet_url": tweet.get("url"),
+                    "created_at": tweet.get("createdAt"),
+                }
+                break
+        if latest_match or not data.get("has_next_page") or not data.get("next_cursor"):
+            break
+        cursor = data.get("next_cursor")
+        pages_checked += 1
+
+    return {
+        "verified": bool(latest_match),
+        "evidence": {
+            "type": "x_post",
+            "source_user_name": source_username,
+            "query": search_query,
+            **(latest_match or {}),
+        },
+    }
+
+
+def _verify_x_retweet(source_username: str, task: dict) -> dict:
+    tweet_id = _x_task_target_tweet_id(task)
+    if not tweet_id:
+        raise HTTPException(status_code=500, detail="X retweet task is missing a tweet id")
+
+    cursor = ""
+    pages_checked = 0
+    found = False
+    while pages_checked < TWITTERAPI_IO_MAX_PAGES:
+        params = {"tweetId": tweet_id}
+        if cursor:
+            params["cursor"] = cursor
+        data = _twitterapi_get("/twitter/tweet/retweeters", params)
+        users = data.get("users") or []
+        found = any(_normalize_x_handle(u.get("userName")) == source_username for u in users)
+        if found or not data.get("has_next_page") or not data.get("next_cursor"):
+            break
+        cursor = data.get("next_cursor")
+        pages_checked += 1
+
+    return {
+        "verified": found,
+        "evidence": {
+            "type": "x_retweet",
+            "source_user_name": source_username,
+            "tweet_id": tweet_id,
+            "pages_checked": pages_checked + 1,
+        },
+    }
+
+
+async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: dict) -> dict:
+    verification_type = _task_verification_type(task)
+    if not verification_type:
+        if (task.get("platform") or "").upper() == "X":
+            raise HTTPException(status_code=500, detail="X task verification is not configured")
+        return {}
+    if not user_task:
+        raise HTTPException(status_code=400, detail="Start this task before claiming it")
+
+    checked_at = _utcnow().isoformat()
+    if not verification_type.startswith("x_"):
+        raise HTTPException(status_code=500, detail="Task verification type is not supported")
+
+    source_username = _current_x_username(current)
+    if not source_username:
+        await db.user_tasks.update_one(
+            {"id": user_task["id"]},
+            {"$set": {
+                "verification_status": "failed",
+                "verification_checked_at": checked_at,
+                "verification_message": "X account is not linked",
+            }},
+        )
+        raise HTTPException(status_code=400, detail="Link your X account before claiming this task")
+
+    if verification_type == "x_follow":
+        result = _verify_x_follow(source_username, task)
+    elif verification_type == "x_post":
+        result = _verify_x_post(source_username, task, user_task)
+    elif verification_type == "x_retweet":
+        result = _verify_x_retweet(source_username, task)
+    else:
+        raise HTTPException(status_code=500, detail="Task verification type is not supported")
+
+    update = {
+        "verification_status": "verified" if result.get("verified") else "failed",
+        "verification_checked_at": checked_at,
+        "verification_type": verification_type,
+        "verification_evidence": result.get("evidence") or {},
+    }
+    if not result.get("verified"):
+        update["verification_message"] = "X action was not found"
+        await db.user_tasks.update_one({"id": user_task["id"]}, {"$set": update})
+        raise HTTPException(
+            status_code=400,
+            detail="We could not verify this X task yet. Complete it on X, then try again.",
+        )
+
+    update["verification_message"] = "Verified"
+    await db.user_tasks.update_one({"id": user_task["id"]}, {"$set": update})
+    return result.get("evidence") or {}
+
+
 # --- Tasks ---
 @api_router.get("/tasks")
 async def list_tasks(current=Depends(get_current_user)):
@@ -1561,23 +1823,30 @@ async def complete_task(task_id: str, current=Depends(get_current_user)):
     existing = await db.user_tasks.find_one({"user_id": current["id"], "task_id": task_id})
     if existing and _user_task_status(task, existing) == "completed":
         raise HTTPException(status_code=400, detail="Task already completed")
+    verification_evidence = await _ensure_task_verified(task, existing, current)
     reward = int(task.get("reward_lp", 100))
     now_dt = datetime.now(timezone.utc)
     now = now_dt.isoformat()
     if existing:
+        completion_set = {"status": "completed", "completed_at": now}
+        if verification_evidence:
+            completion_set["verification_evidence"] = verification_evidence
         await db.user_tasks.update_one(
             {"user_id": current["id"], "task_id": task_id},
-            {"$set": {"status": "completed", "completed_at": now}},
+            {"$set": completion_set},
         )
     else:
-        await db.user_tasks.insert_one({
+        user_task_doc = {
             "id": str(uuid.uuid4()),
             "user_id": current["id"],
             "task_id": task_id,
             "status": "completed",
             "started_at": now,
             "completed_at": now,
-        })
+        }
+        if verification_evidence:
+            user_task_doc["verification_evidence"] = verification_evidence
+        await db.user_tasks.insert_one(user_task_doc)
 
     user_update = {"$inc": {"lap_points": reward, "tasks_completed": 1}}
     if _is_daily_task(task):
@@ -1765,6 +2034,16 @@ async def seed():
             await db.tasks.update_one(
                 {"id": task["id"], "$or": [{"external_url": {"$exists": False}}, {"external_url": ""}, {"external_url": "#"}]},
                 {"$set": {"external_url": task["external_url"]}},
+            )
+        verification_defaults = {
+            key: task[key]
+            for key in ("verification_type", "verification_target", "verification_query")
+            if task.get(key)
+        }
+        if verification_defaults:
+            await db.tasks.update_one(
+                {"id": task["id"]},
+                {"$set": verification_defaults},
             )
 
     # Admin
