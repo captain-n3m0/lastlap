@@ -52,32 +52,34 @@ Task fields:
 
 Deleting a task also deletes all user progress records for that task. Pause a task instead when you want to preserve historical progress.
 
-### X Verification
+### Task Verification
 
-X tasks can require verification before points are awarded.
+Some tasks can require verification before points are awarded.
 
 Supported verification types:
 
 - `FOLLOW ACCOUNT`: checks whether the linked X account follows the target account.
+- `PROFILE UPDATE`: checks whether the rider saved a profile change after starting the task.
 - `POST SEARCH QUERY`: searches recent posts from the linked X account for the configured query.
 - `REPOST TWEET`: checks whether the linked X account reposted the target tweet.
 - `LIKE TWEET`: checks whether the linked X account liked the target tweet.
 
-X verification fields:
+Verification fields:
 
-- Target: use an account handle for follow tasks, or a tweet URL/id for repost and like tasks.
+- Target: use an account handle for follow tasks, or a tweet URL/id for repost and like tasks. Profile update tasks do not need a target.
 - Search Query: used only for post tasks. Example: `@lastlapdotfun OR #LastLap`.
 
 Important behavior:
 
 - Users must link their X account before claiming X-verified tasks.
 - Users first start the task, complete the action on X, then return and claim it.
+- `PROFILE UPDATE` tasks should use platform `PROFILE`, external URL `/profile`, and verification type `profile_update`. They only verify after the user saves an actual profile change.
 - `POST SEARCH QUERY` can require multiple TwitterAPI.io calls because results may be paginated.
 - `REPOST TWEET` uses X's repost lookup so quote tweets do not count as reposts.
 - `REPOST TWEET` and `LIKE TWEET` use the linked user's X OAuth2 token. Users who linked X before these scopes were added may need to unlink and reconnect X.
 - `LIKE TWEET` requires the `like.read` scope.
 
-Backend environment for X verification:
+Backend environment for verification:
 
 ```env
 X_OAUTH_SCOPES=tweet.read users.read like.read offline.access
@@ -95,6 +97,7 @@ Troubleshooting:
 
 - `X account is not linked`: ask the user to connect X from their profile/login flow.
 - `X action was not found`: confirm the target handle/tweet/query is correct and the user performed the action with the linked X account.
+- `Update your profile, then try again`: the user started the profile task but has not saved a profile change since starting it.
 - `Reconnect your X account with OAuth 2.0`: the user needs to unlink and reconnect X before claiming repost or like tasks.
 - `Reconnect your X account to grant like.read`: the user needs to unlink and reconnect X before claiming like tasks.
 - `Twitter verification is rate limited`: TwitterAPI.io returned HTTP `429`; confirm the active API key and plan, then retry after the indicated wait.

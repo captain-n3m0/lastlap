@@ -169,11 +169,19 @@ export default function AdminDashboard() {
     setTaskForm((prev) => {
       const next = { ...prev, [key]: type === "checkbox" ? checked : value };
       if (key === "platform") {
-        if (value === "X" && !prev.verification_type) next.verification_type = "x_follow";
+        if (value === "X" && (!prev.verification_type || prev.verification_type === "profile_update")) next.verification_type = "x_follow";
+        if (value === "PROFILE") {
+          next.icon = prev.icon || "profile";
+          next.external_url = prev.external_url && prev.external_url !== "#" ? prev.external_url : "/profile";
+          if (!prev.verification_type || prev.verification_type?.startsWith("x_")) next.verification_type = "profile_update";
+        }
         if (value !== "X" && prev.verification_type?.startsWith("x_")) {
           next.verification_type = "";
           next.verification_target = "";
           next.verification_query = "";
+        }
+        if (value !== "PROFILE" && prev.verification_type === "profile_update") {
+          next.verification_type = "";
         }
       }
       return next;
@@ -399,7 +407,7 @@ export default function AdminDashboard() {
                                 {task.is_active ? "ACTIVE" : "PAUSED"}
                               </span>
                               {task.cadence === "daily" && <span className="font-pixel text-[8px] tracking-widest px-2 py-1 rounded border border-[var(--amber)] text-[var(--amber)]">DAILY</span>}
-                              {task.verification_type && <span className="font-pixel text-[8px] tracking-widest px-2 py-1 rounded border border-[var(--blue)] text-[var(--blue)]">VERIFY X</span>}
+                              {(task.verification_type || task.platform === "PROFILE") && <span className="font-pixel text-[8px] tracking-widest px-2 py-1 rounded border border-[var(--blue)] text-[var(--blue)]">VERIFY</span>}
                             </div>
                             <div className="font-mono-crt text-[14px] text-[var(--muted)] truncate">{task.description}</div>
                             <div className="font-pixel text-[9px] tracking-widest text-[var(--muted-2)] mt-1">
@@ -448,6 +456,7 @@ export default function AdminDashboard() {
                           <option value="DISCORD">DISCORD</option>
                           <option value="WALLET">WALLET</option>
                           <option value="EMAIL">EMAIL</option>
+                          <option value="PROFILE">PROFILE</option>
                         </select>
                       </div>
                       <div>
@@ -484,6 +493,7 @@ export default function AdminDashboard() {
                         <label className="label-ll block mb-2">TYPE</label>
                         <select value={taskForm.verification_type || ""} onChange={taskField("verification_type")} className="input-ll">
                           <option value="">NONE</option>
+                          <option value="profile_update">PROFILE UPDATE</option>
                           <option value="x_follow">FOLLOW ACCOUNT</option>
                           <option value="x_post">POST SEARCH QUERY</option>
                           <option value="x_retweet">REPOST TWEET</option>

@@ -8,6 +8,7 @@ import {
   Mail,
   Star,
   Trophy,
+  User,
   UserPlus,
   Users,
   Wallet,
@@ -23,6 +24,7 @@ export const TASK_ICON_OPTIONS = [
   { value: "wallet", label: "WALLET" },
   { value: "checkin", label: "CHECK-IN" },
   { value: "email", label: "EMAIL" },
+  { value: "profile", label: "PROFILE" },
   { value: "users", label: "CREW" },
   { value: "gift", label: "REWARD" },
   { value: "flag", label: "FLAG" },
@@ -41,6 +43,7 @@ export default function TaskPlatformIcon({ platform, icon, size = 14, className 
   if (normalizedIcon === "discord") return <DiscordLogo size={size} className={className} />;
   if (normalizedIcon === "wallet") return <Wallet size={size} className={className} />;
   if (normalizedIcon === "email") return <Mail size={size} className={className} />;
+  if (normalizedIcon === "profile") return <User size={size} className={className} />;
   if (normalizedIcon === "checkin") return <CalendarCheck size={size} className={className} />;
   if (normalizedIcon === "referral") return <UserPlus size={size} className={className} />;
   if (normalizedIcon === "users") return <Users size={size} className={className} />;
@@ -56,6 +59,7 @@ export default function TaskPlatformIcon({ platform, icon, size = 14, className 
   if (normalized === "DISCORD") return <DiscordLogo size={size} className={className} />;
   if (normalized === "WALLET") return <Wallet size={size} className={className} />;
   if (normalized === "EMAIL") return <Mail size={size} className={className} />;
+  if (normalized === "PROFILE") return <User size={size} className={className} />;
   if (normalized === "CHECKIN") return <CalendarCheck size={size} className={className} />;
   if (normalized === "LASTLAP") return <Star size={size} className={className} />;
 

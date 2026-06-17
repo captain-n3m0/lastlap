@@ -340,6 +340,8 @@ def _extract_x_tweet_id(value: Optional[str]) -> str:
 def _task_verification_type(task: dict) -> str:
     verification_type = (task.get("verification_type") or "").strip().lower()
     if verification_type in {"", "none"}:
+        if (task.get("platform") or "").strip().upper() == "PROFILE":
+            return "profile_update"
         return ""
     return verification_type
 
@@ -580,7 +582,7 @@ class AdminTaskIn(BaseModel):
     order: int = Field(100, ge=0, le=10000)
     is_active: bool = True
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
-    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet|x_like)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|profile_update|x_follow|x_post|x_retweet|x_like)$")
     verification_target: Optional[str] = Field(None, max_length=500)
     verification_query: Optional[str] = Field(None, max_length=500)
 
@@ -595,7 +597,7 @@ class AdminTaskPatch(BaseModel):
     order: Optional[int] = Field(None, ge=0, le=10000)
     is_active: Optional[bool] = None
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
-    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet|x_like)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|profile_update|x_follow|x_post|x_retweet|x_like)$")
     verification_target: Optional[str] = Field(None, max_length=500)
     verification_query: Optional[str] = Field(None, max_length=500)
 
@@ -822,6 +824,9 @@ async def update_profile(data: ProfileUpdateIn, current=Depends(get_current_user
     if not update:
         return {"ok": True, "user": sanitize_user(current)}
 
+    changed_profile_fields = sorted(update.keys())
+    update["profile_updated_at"] = _utcnow().isoformat()
+    update["profile_update_fields"] = changed_profile_fields
     await db.users.update_one({"id": current["id"]}, {"$set": update})
     user = await db.users.find_one({"id": current["id"]}, {"_id": 0})
     return {"ok": True, "user": sanitize_user(user)}
@@ -1479,6 +1484,7 @@ async def admin_list_tasks(admin=Depends(require_admin)):
             **task,
             "is_active": task.get("is_active", True),
             "cadence": task.get("cadence", "once"),
+            "verification_type": _task_verification_type(task),
             **counts.get(task["id"], {"started_count": 0, "completion_count": 0}),
         }
         for task in tasks
@@ -1953,6 +1959,24 @@ async def _verify_x_like(source_username: str, task: dict, current: dict) -> dic
     }
 
 
+def _verify_profile_update(task: dict, user_task: dict, current: dict) -> dict:
+    started_at = _parse_dt(user_task.get("started_at"))
+    profile_updated_at = _parse_dt(current.get("profile_updated_at"))
+    verified = bool(started_at and profile_updated_at and profile_updated_at >= started_at)
+    return {
+        "verified": verified,
+        "failure_detail": "Update your profile, then try again.",
+        "failure_message": "Profile update was not found",
+        "evidence": {
+            "type": "profile_update",
+            "started_at": user_task.get("started_at"),
+            "profile_updated_at": current.get("profile_updated_at"),
+            "profile_update_fields": current.get("profile_update_fields") or [],
+            "task_id": task.get("id"),
+        },
+    }
+
+
 async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: dict) -> dict:
     verification_type = _task_verification_type(task)
     if not verification_type:
@@ -1963,29 +1987,31 @@ async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: 
         raise HTTPException(status_code=400, detail="Start this task before claiming it")
 
     checked_at = _utcnow().isoformat()
-    if not verification_type.startswith("x_"):
-        raise HTTPException(status_code=500, detail="Task verification type is not supported")
+    if verification_type == "profile_update":
+        result = _verify_profile_update(task, user_task, current)
+    elif verification_type.startswith("x_"):
+        source_username = _current_x_username(current)
+        if not source_username:
+            await db.user_tasks.update_one(
+                {"id": user_task["id"]},
+                {"$set": {
+                    "verification_status": "failed",
+                    "verification_checked_at": checked_at,
+                    "verification_message": "X account is not linked",
+                }},
+            )
+            raise HTTPException(status_code=400, detail="Link your X account before claiming this task")
 
-    source_username = _current_x_username(current)
-    if not source_username:
-        await db.user_tasks.update_one(
-            {"id": user_task["id"]},
-            {"$set": {
-                "verification_status": "failed",
-                "verification_checked_at": checked_at,
-                "verification_message": "X account is not linked",
-            }},
-        )
-        raise HTTPException(status_code=400, detail="Link your X account before claiming this task")
-
-    if verification_type == "x_follow":
-        result = await _verify_x_follow(source_username, task)
-    elif verification_type == "x_post":
-        result = await _verify_x_post(source_username, task, user_task)
-    elif verification_type == "x_retweet":
-        result = await _verify_x_retweet(source_username, task, current)
-    elif verification_type == "x_like":
-        result = await _verify_x_like(source_username, task, current)
+        if verification_type == "x_follow":
+            result = await _verify_x_follow(source_username, task)
+        elif verification_type == "x_post":
+            result = await _verify_x_post(source_username, task, user_task)
+        elif verification_type == "x_retweet":
+            result = await _verify_x_retweet(source_username, task, current)
+        elif verification_type == "x_like":
+            result = await _verify_x_like(source_username, task, current)
+        else:
+            raise HTTPException(status_code=500, detail="Task verification type is not supported")
     else:
         raise HTTPException(status_code=500, detail="Task verification type is not supported")
 
@@ -1996,11 +2022,11 @@ async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: 
         "verification_evidence": result.get("evidence") or {},
     }
     if not result.get("verified"):
-        update["verification_message"] = "X action was not found"
+        update["verification_message"] = result.get("failure_message") or "X action was not found"
         await db.user_tasks.update_one({"id": user_task["id"]}, {"$set": update})
         raise HTTPException(
             status_code=400,
-            detail="We could not verify this X task yet. Complete it on X, then try again.",
+            detail=result.get("failure_detail") or "We could not verify this X task yet. Complete it on X, then try again.",
         )
 
     update["verification_message"] = "Verified"
@@ -2019,6 +2045,7 @@ async def list_tasks(current=Depends(get_current_user)):
     for t in tasks:
         out.append({
             **t,
+            "verification_type": _task_verification_type(t),
             "status": _user_task_status(t, task_map.get(t["id"])) if _is_daily_task(t) else status_map.get(t["id"], "available"),
         })
     return out

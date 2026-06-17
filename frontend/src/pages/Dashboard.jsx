@@ -54,6 +54,13 @@ function TaskItem({ task, onAction, isAuthLoading, className = "" }) {
   );
 }
 
+function verificationStartMessage(task) {
+  if (task.verification_type === "profile_update" || task.platform === "PROFILE") {
+    return "STARTED — UPDATE PROFILE, THEN CLAIM";
+  }
+  return "STARTED — COMPLETE ON X, THEN CLAIM";
+}
+
 function CountdownTimer() {
   const [seconds, setSeconds] = useState(0);
 
@@ -164,7 +171,7 @@ export default function Dashboard() {
           window.open(task.external_url, "_blank", "noopener");
         }
         if (task.verification_type) {
-          toast.success("STARTED — COMPLETE ON X, THEN CLAIM", { duration: 3000 });
+          toast.success(verificationStartMessage(task), { duration: 3000 });
           await loadAll();
           return;
         }

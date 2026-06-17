@@ -6,6 +6,13 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import TaskPlatformIcon from "../components/TaskPlatformIcon";
 
+function verificationStartMessage(task) {
+  if (task.verification_type === "profile_update" || task.platform === "PROFILE") {
+    return "STARTED — UPDATE PROFILE, THEN CLAIM";
+  }
+  return "STARTED — COMPLETE ON X, THEN CLAIM";
+}
+
 export default function TasksPage() {
   const { refreshUser } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -25,7 +32,7 @@ export default function TasksPage() {
           window.open(task.external_url, "_blank", "noopener");
         }
         if (task.verification_type) {
-          toast.success("STARTED — COMPLETE ON X, THEN CLAIM", { duration: 3000 });
+          toast.success(verificationStartMessage(task), { duration: 3000 });
           await load();
           return;
         }
