@@ -52,6 +52,8 @@ OTP_DEBUG = os.environ.get("OTP_DEBUG", "").lower() == "true" or not RESEND_API_
 X_OAUTH_AUTHORIZE_URL = "https://x.com/i/oauth2/authorize"
 X_OAUTH_TOKEN_URL = "https://api.x.com/2/oauth2/token"
 X_OAUTH_ME_URL = "https://api.x.com/2/users/me"
+X_LIKED_TWEETS_URL = "https://api.x.com/2/users/{user_id}/liked_tweets"
+X_REPOSTED_BY_URL = "https://api.x.com/2/tweets/{tweet_id}/retweeted_by"
 X_OAUTH1_REQUEST_TOKEN_URL = "https://api.x.com/oauth/request_token"
 X_OAUTH1_AUTHORIZE_URL = "https://api.x.com/oauth/authenticate"
 X_OAUTH1_ACCESS_TOKEN_URL = "https://api.x.com/oauth/access_token"
@@ -59,7 +61,7 @@ X_OAUTH1_VERIFY_CREDENTIALS_URL = "https://api.x.com/1.1/account/verify_credenti
 X_OAUTH_CLIENT_ID = _env_first("X_OAUTH_CLIENT_ID", "TWITTER_OAUTH_CLIENT_ID", "TWITTER_CLIENT_ID")
 X_OAUTH_CLIENT_SECRET = _env_first("X_OAUTH_CLIENT_SECRET", "TWITTER_OAUTH_CLIENT_SECRET", "TWITTER_CLIENT_SECRET")
 X_OAUTH_REDIRECT_URI = _env_first("X_OAUTH_REDIRECT_URI", "TWITTER_OAUTH_REDIRECT_URI", "TWITTER_REDIRECT_URI")
-X_OAUTH_SCOPES = _env_first("X_OAUTH_SCOPES", "TWITTER_OAUTH_SCOPES", default="tweet.read users.read offline.access")
+X_OAUTH_SCOPES = _env_first("X_OAUTH_SCOPES", "TWITTER_OAUTH_SCOPES", default="tweet.read users.read like.read offline.access")
 X_OAUTH_VERSION = _env_first("X_OAUTH_VERSION", "TWITTER_OAUTH_VERSION", default="auto").lower()
 X_CONSUMER_KEY = _env_first("X_CONSUMER_KEY", "X_API_KEY", "TWITTER_CONSUMER_KEY", "TWITTER_API_KEY")
 X_CONSUMER_SECRET = _env_first(
@@ -81,6 +83,8 @@ TWITTERAPI_IO_TIMEOUT = int(os.environ.get("TWITTERAPI_IO_TIMEOUT", "15"))
 TWITTERAPI_IO_MAX_PAGES = int(os.environ.get("TWITTERAPI_IO_MAX_PAGES", "5"))
 TWITTERAPI_IO_MIN_INTERVAL_SECONDS = float(os.environ.get("TWITTERAPI_IO_MIN_INTERVAL_SECONDS", "0"))
 TWITTERAPI_IO_RETRIES = int(os.environ.get("TWITTERAPI_IO_RETRIES", "1"))
+X_LIKE_VERIFY_MAX_PAGES = int(os.environ.get("X_LIKE_VERIFY_MAX_PAGES", "5"))
+X_REPOST_VERIFY_MAX_PAGES = int(os.environ.get("X_REPOST_VERIFY_MAX_PAGES", "5"))
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -576,7 +580,7 @@ class AdminTaskIn(BaseModel):
     order: int = Field(100, ge=0, le=10000)
     is_active: bool = True
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
-    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet|x_like)$")
     verification_target: Optional[str] = Field(None, max_length=500)
     verification_query: Optional[str] = Field(None, max_length=500)
 
@@ -591,7 +595,7 @@ class AdminTaskPatch(BaseModel):
     order: Optional[int] = Field(None, ge=0, le=10000)
     is_active: Optional[bool] = None
     cadence: Optional[str] = Field(None, pattern=r"^(daily|once)$")
-    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet)$")
+    verification_type: Optional[str] = Field(None, max_length=32, pattern=r"^(|none|x_follow|x_post|x_retweet|x_like)$")
     verification_target: Optional[str] = Field(None, max_length=500)
     verification_query: Optional[str] = Field(None, max_length=500)
 
@@ -1658,6 +1662,116 @@ async def _twitterapi_get(path: str, params: dict) -> dict:
     raise HTTPException(status_code=502, detail="Twitter verification service is unavailable")
 
 
+def _x_token_scope_set(current: dict) -> set:
+    scopes = re.split(r"[\s,]+", current.get("x_token_scope") or "")
+    return {s.strip() for s in scopes if s.strip()}
+
+
+async def _refresh_x_oauth2_access_token(current: dict) -> str:
+    refresh_token = current.get("x_refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="Reconnect your X account before claiming this X task")
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": X_OAUTH_CLIENT_ID,
+    }
+    try:
+        resp = await asyncio.to_thread(
+            requests.post,
+            X_OAUTH_TOKEN_URL,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                **_x_token_auth_header(),
+            },
+            data=data,
+            timeout=15,
+        )
+    except requests.RequestException as exc:
+        logger.error("X OAuth token refresh failed: %s", exc)
+        raise HTTPException(status_code=502, detail="X token refresh failed. Please try again.")
+    if resp.status_code >= 400:
+        logger.error("X OAuth token refresh failed: %s %s", resp.status_code, resp.text)
+        raise HTTPException(status_code=400, detail="Reconnect your X account before claiming this X task")
+    token_data = resp.json()
+    token_data["oauth_version"] = "2.0"
+    update = _x_token_fields(token_data)
+    await db.users.update_one({"id": current["id"]}, {"$set": update})
+    current.update(update)
+    return current["x_access_token"]
+
+
+async def _x_oauth2_access_token_for_scopes(
+    current: dict,
+    required_scopes: set,
+    action_label: str,
+    force_refresh: bool = False,
+) -> str:
+    if current.get("x_oauth_version") != "2.0" or not current.get("x_access_token"):
+        raise HTTPException(status_code=400, detail=f"Reconnect your X account with OAuth 2.0 before claiming {action_label} tasks")
+    missing_scopes = sorted(required_scopes - _x_token_scope_set(current))
+    if missing_scopes:
+        missing = " ".join(missing_scopes)
+        raise HTTPException(status_code=400, detail=f"Reconnect your X account to grant {missing} before claiming {action_label} tasks")
+    expires_at = _parse_dt(current.get("x_token_expires_at"))
+    if force_refresh or (expires_at and expires_at <= _utcnow() + timedelta(seconds=60)):
+        return await _refresh_x_oauth2_access_token(current)
+    return current["x_access_token"]
+
+
+async def _x_api_get_json(
+    current: dict,
+    url: str,
+    params: dict,
+    required_scopes: set,
+    action_label: str,
+) -> dict:
+    token = await _x_oauth2_access_token_for_scopes(current, required_scopes, action_label)
+    for attempt in range(2):
+        try:
+            resp = await asyncio.to_thread(
+                requests.get,
+                url,
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=15,
+            )
+        except requests.RequestException as exc:
+            logger.error("X API request failed: %s", exc)
+            raise HTTPException(status_code=502, detail="X verification service timed out. Please try again.")
+
+        if resp.status_code == 401 and attempt == 0:
+            token = await _x_oauth2_access_token_for_scopes(current, required_scopes, action_label, force_refresh=True)
+            continue
+
+        try:
+            data = resp.json()
+        except ValueError:
+            logger.error("X API returned non-JSON response: %s %s", resp.status_code, resp.text[:500])
+            raise HTTPException(status_code=502, detail="X verification returned an invalid response")
+
+        if resp.status_code == 429:
+            retry_after = _twitterapi_retry_after_seconds(resp)
+            if retry_after is not None:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"X verification is rate limited. Please try again in {int(retry_after) + 1} seconds.",
+                )
+            raise HTTPException(status_code=429, detail="X verification is rate limited. Please try again soon.")
+
+        if resp.status_code in {401, 403}:
+            logger.error("X API authorization failed: %s %s", resp.status_code, data)
+            raise HTTPException(status_code=400, detail=f"Reconnect your X account before claiming {action_label} tasks")
+
+        if resp.status_code >= 400:
+            logger.error("X API error: %s %s", resp.status_code, data)
+            raise HTTPException(status_code=502, detail="X verification service is unavailable")
+
+        return data
+
+    raise HTTPException(status_code=502, detail="X verification service is unavailable")
+
+
 def _current_x_username(current: dict) -> str:
     if not current.get("x_id"):
         return ""
@@ -1742,33 +1856,99 @@ async def _verify_x_post(source_username: str, task: dict, user_task: dict) -> d
     }
 
 
-async def _verify_x_retweet(source_username: str, task: dict) -> dict:
+async def _verify_x_retweet(source_username: str, task: dict, current: dict) -> dict:
     tweet_id = _x_task_target_tweet_id(task)
     if not tweet_id:
         raise HTTPException(status_code=500, detail="X retweet task is missing a tweet id")
 
-    cursor = ""
+    pagination_token = ""
     pages_checked = 0
-    found = False
-    while pages_checked < TWITTERAPI_IO_MAX_PAGES:
-        params = {"tweetId": tweet_id}
-        if cursor:
-            params["cursor"] = cursor
-        data = await _twitterapi_get("/twitter/tweet/retweeters", params)
-        users = data.get("users") or []
-        found = any(_normalize_x_handle(u.get("userName")) == source_username for u in users)
-        if found or not data.get("has_next_page") or not data.get("next_cursor"):
-            break
-        cursor = data.get("next_cursor")
+    matched_user = None
+    while pages_checked < X_REPOST_VERIFY_MAX_PAGES:
+        params = {
+            "max_results": 100,
+            "user.fields": "username",
+        }
+        if pagination_token:
+            params["pagination_token"] = pagination_token
+        data = await _x_api_get_json(
+            current,
+            X_REPOSTED_BY_URL.format(tweet_id=tweet_id),
+            params,
+            {"tweet.read", "users.read"},
+            "repost",
+        )
         pages_checked += 1
+        for user in data.get("data") or []:
+            if str(user.get("id", "")) == str(current.get("x_id", "")):
+                matched_user = {
+                    "x_user_id": str(user.get("id", "")),
+                    "x_username": _normalize_x_handle(user.get("username")),
+                }
+                break
+        meta = data.get("meta") or {}
+        if matched_user or not meta.get("next_token"):
+            break
+        pagination_token = meta["next_token"]
 
     return {
-        "verified": found,
+        "verified": bool(matched_user),
         "evidence": {
             "type": "x_retweet",
             "source_user_name": source_username,
+            "source_user_id": current.get("x_id"),
             "tweet_id": tweet_id,
-            "pages_checked": pages_checked + 1,
+            "pages_checked": pages_checked,
+            **(matched_user or {}),
+        },
+    }
+
+
+async def _verify_x_like(source_username: str, task: dict, current: dict) -> dict:
+    tweet_id = _x_task_target_tweet_id(task)
+    if not tweet_id:
+        raise HTTPException(status_code=500, detail="X like task is missing a tweet id")
+
+    pagination_token = ""
+    pages_checked = 0
+    matched_tweet = None
+    while pages_checked < X_LIKE_VERIFY_MAX_PAGES:
+        params = {
+            "max_results": 100,
+            "tweet.fields": "id,created_at,author_id",
+        }
+        if pagination_token:
+            params["pagination_token"] = pagination_token
+        data = await _x_api_get_json(
+            current,
+            X_LIKED_TWEETS_URL.format(user_id=current["x_id"]),
+            params,
+            {"tweet.read", "users.read", "like.read"},
+            "like",
+        )
+        pages_checked += 1
+        for tweet in data.get("data") or []:
+            if str(tweet.get("id", "")) == tweet_id:
+                matched_tweet = {
+                    "tweet_id": tweet_id,
+                    "created_at": tweet.get("created_at"),
+                    "author_id": tweet.get("author_id"),
+                }
+                break
+        meta = data.get("meta") or {}
+        if matched_tweet or not meta.get("next_token"):
+            break
+        pagination_token = meta["next_token"]
+
+    return {
+        "verified": bool(matched_tweet),
+        "evidence": {
+            "type": "x_like",
+            "source_user_name": source_username,
+            "source_user_id": current.get("x_id"),
+            "tweet_id": tweet_id,
+            "pages_checked": pages_checked,
+            **(matched_tweet or {}),
         },
     }
 
@@ -1803,7 +1983,9 @@ async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: 
     elif verification_type == "x_post":
         result = await _verify_x_post(source_username, task, user_task)
     elif verification_type == "x_retweet":
-        result = await _verify_x_retweet(source_username, task)
+        result = await _verify_x_retweet(source_username, task, current)
+    elif verification_type == "x_like":
+        result = await _verify_x_like(source_username, task, current)
     else:
         raise HTTPException(status_code=500, detail="Task verification type is not supported")
 

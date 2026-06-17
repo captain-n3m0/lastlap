@@ -60,34 +60,43 @@ Supported verification types:
 
 - `FOLLOW ACCOUNT`: checks whether the linked X account follows the target account.
 - `POST SEARCH QUERY`: searches recent posts from the linked X account for the configured query.
-- `RETWEET TWEET`: checks whether the linked X account reposted the target tweet.
+- `REPOST TWEET`: checks whether the linked X account reposted the target tweet.
+- `LIKE TWEET`: checks whether the linked X account liked the target tweet.
 
 X verification fields:
 
-- Target: use an account handle for follow tasks, or a tweet URL/id for retweet tasks.
+- Target: use an account handle for follow tasks, or a tweet URL/id for repost and like tasks.
 - Search Query: used only for post tasks. Example: `@lastlapdotfun OR #LastLap`.
 
 Important behavior:
 
 - Users must link their X account before claiming X-verified tasks.
 - Users first start the task, complete the action on X, then return and claim it.
-- `POST SEARCH QUERY` and `RETWEET TWEET` can require multiple TwitterAPI.io calls because results may be paginated.
+- `POST SEARCH QUERY` can require multiple TwitterAPI.io calls because results may be paginated.
+- `REPOST TWEET` uses X's repost lookup so quote tweets do not count as reposts.
+- `REPOST TWEET` and `LIKE TWEET` use the linked user's X OAuth2 token. Users who linked X before these scopes were added may need to unlink and reconnect X.
+- `LIKE TWEET` requires the `like.read` scope.
 
 Backend environment for X verification:
 
 ```env
+X_OAUTH_SCOPES=tweet.read users.read like.read offline.access
 TWITTERAPI_IO_API_KEY=your-key
 TWITTERAPI_IO_BASE_URL=https://api.twitterapi.io
 TWITTERAPI_IO_TIMEOUT=15
 TWITTERAPI_IO_MAX_PAGES=5
 TWITTERAPI_IO_RETRIES=1
 TWITTERAPI_IO_MIN_INTERVAL_SECONDS=0
+X_LIKE_VERIFY_MAX_PAGES=5
+X_REPOST_VERIFY_MAX_PAGES=5
 ```
 
 Troubleshooting:
 
 - `X account is not linked`: ask the user to connect X from their profile/login flow.
 - `X action was not found`: confirm the target handle/tweet/query is correct and the user performed the action with the linked X account.
+- `Reconnect your X account with OAuth 2.0`: the user needs to unlink and reconnect X before claiming repost or like tasks.
+- `Reconnect your X account to grant like.read`: the user needs to unlink and reconnect X before claiming like tasks.
 - `Twitter verification is rate limited`: TwitterAPI.io returned HTTP `429`; confirm the active API key and plan, then retry after the indicated wait.
 - `Twitter verification service timed out`: TwitterAPI.io did not respond within `TWITTERAPI_IO_TIMEOUT`; retry later or increase the timeout slightly.
 
@@ -145,7 +154,7 @@ Before launch:
 - Confirm `ADMIN_EMAIL` belongs to the intended owner.
 - Confirm `CORS_ORIGINS` and `FRONTEND_PUBLIC_URL` match the production domain.
 - Add X OAuth callback URLs in the X Developer Portal.
-- Set `TWITTERAPI_IO_API_KEY` if X task verification is enabled.
+- Set `TWITTERAPI_IO_API_KEY` if X follow/post verification is enabled.
 - Restart the backend after environment changes.
 
 After launch:
@@ -153,4 +162,4 @@ After launch:
 - Prefer pausing tasks over deleting them.
 - Keep LP corrections in Point Adjustment with a reason.
 - Test each new X task with a real linked X account before announcing it.
-- Watch backend logs for TwitterAPI.io `429`, timeout, or invalid-response errors.
+- Watch backend logs for TwitterAPI.io and X API `429`, timeout, or invalid-response errors.

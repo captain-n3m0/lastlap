@@ -486,7 +486,8 @@ export default function AdminDashboard() {
                           <option value="">NONE</option>
                           <option value="x_follow">FOLLOW ACCOUNT</option>
                           <option value="x_post">POST SEARCH QUERY</option>
-                          <option value="x_retweet">RETWEET TWEET</option>
+                          <option value="x_retweet">REPOST TWEET</option>
+                          <option value="x_like">LIKE TWEET</option>
                         </select>
                       </div>
                       <div>
