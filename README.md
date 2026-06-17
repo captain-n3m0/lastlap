@@ -183,6 +183,9 @@ After deployment, log in with the admin credentials you set in
 admin user the first time the backend starts. Tasks and leaderboard entries
 come from real data in your database.
 
+For day-to-day admin operations, task setup, X verification, and point
+adjustments, see [ADMIN.md](ADMIN.md).
+
 ---
 
 ## 6. What to change before going public
