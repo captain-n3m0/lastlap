@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import os
+import asyncio
 import logging
 import uuid
 import random
@@ -13,6 +14,7 @@ import re
 import base64
 import hashlib
 import secrets
+import time
 from urllib.parse import parse_qsl, urlencode, urlparse
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Union
@@ -77,6 +79,8 @@ TWITTERAPI_IO_API_KEY = _env_first(
 TWITTERAPI_IO_BASE_URL = os.environ.get("TWITTERAPI_IO_BASE_URL", "https://api.twitterapi.io").rstrip("/")
 TWITTERAPI_IO_TIMEOUT = int(os.environ.get("TWITTERAPI_IO_TIMEOUT", "15"))
 TWITTERAPI_IO_MAX_PAGES = int(os.environ.get("TWITTERAPI_IO_MAX_PAGES", "5"))
+TWITTERAPI_IO_MIN_INTERVAL_SECONDS = float(os.environ.get("TWITTERAPI_IO_MIN_INTERVAL_SECONDS", "0"))
+TWITTERAPI_IO_RETRIES = int(os.environ.get("TWITTERAPI_IO_RETRIES", "1"))
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -88,6 +92,9 @@ security = HTTPBearer(auto_error=False)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+_twitterapi_rate_lock = asyncio.Lock()
+_twitterapi_last_request_at = 0.0
 
 AVATAR_COLORS = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#EC4899"]
 AVATAR_PRESETS = ["helmet", "bolt", "flag", "skull", "wheel", "initial"]
@@ -1572,34 +1579,83 @@ async def admin_adjust_points(user_id: str, data: AdminPointsAdjustIn, admin=Dep
 
 
 # --- Task Verification ---
-def _twitterapi_get(path: str, params: dict) -> dict:
+def _twitterapi_retry_after_seconds(resp: requests.Response) -> Optional[float]:
+    retry_after = (resp.headers.get("Retry-After") or "").strip()
+    if not retry_after:
+        return None
+    try:
+        return max(0.0, float(retry_after))
+    except ValueError:
+        return None
+
+
+async def _twitterapi_wait_for_configured_interval():
+    global _twitterapi_last_request_at
+    if TWITTERAPI_IO_MIN_INTERVAL_SECONDS <= 0:
+        return
+    async with _twitterapi_rate_lock:
+        elapsed = time.monotonic() - _twitterapi_last_request_at
+        wait_for = TWITTERAPI_IO_MIN_INTERVAL_SECONDS - elapsed
+        if wait_for > 0:
+            await asyncio.sleep(wait_for)
+        _twitterapi_last_request_at = time.monotonic()
+
+
+async def _twitterapi_request(path: str, params: dict) -> requests.Response:
+    await _twitterapi_wait_for_configured_interval()
+    return await asyncio.to_thread(
+        requests.get,
+        f"{TWITTERAPI_IO_BASE_URL}{path}",
+        headers={"X-API-Key": TWITTERAPI_IO_API_KEY},
+        params=params,
+        timeout=TWITTERAPI_IO_TIMEOUT,
+    )
+
+
+async def _twitterapi_get(path: str, params: dict) -> dict:
     if not TWITTERAPI_IO_API_KEY:
         raise HTTPException(
             status_code=503,
             detail="Twitter verification is not configured. Set TWITTERAPI_IO_API_KEY on the backend.",
         )
-    try:
-        resp = requests.get(
-            f"{TWITTERAPI_IO_BASE_URL}{path}",
-            headers={"X-API-Key": TWITTERAPI_IO_API_KEY},
-            params=params,
-            timeout=TWITTERAPI_IO_TIMEOUT,
-        )
-    except requests.RequestException as exc:
-        logger.error("TwitterAPI.io request failed: %s", exc)
-        raise HTTPException(status_code=502, detail="Twitter verification service is unavailable")
+    for attempt in range(max(0, TWITTERAPI_IO_RETRIES) + 1):
+        try:
+            resp = await _twitterapi_request(path, params)
+        except requests.RequestException as exc:
+            if attempt < TWITTERAPI_IO_RETRIES:
+                logger.warning("TwitterAPI.io request failed, retrying: %s", exc)
+                await asyncio.sleep(min(2 * (attempt + 1), 5))
+                continue
+            logger.error("TwitterAPI.io request failed: %s", exc)
+            raise HTTPException(status_code=502, detail="Twitter verification service timed out. Please try again.")
 
-    try:
-        data = resp.json()
-    except ValueError:
-        logger.error("TwitterAPI.io returned non-JSON response: %s %s", resp.status_code, resp.text[:500])
-        raise HTTPException(status_code=502, detail="Twitter verification returned an invalid response")
+        try:
+            data = resp.json()
+        except ValueError:
+            logger.error("TwitterAPI.io returned non-JSON response: %s %s", resp.status_code, resp.text[:500])
+            raise HTTPException(status_code=502, detail="Twitter verification returned an invalid response")
 
-    if resp.status_code >= 400 or data.get("status") == "error":
-        message = data.get("message") or data.get("msg") or "Twitter verification failed"
-        logger.error("TwitterAPI.io error: %s %s", resp.status_code, data)
-        raise HTTPException(status_code=502, detail=message)
-    return data
+        if resp.status_code == 429:
+            message = data.get("message") or data.get("msg") or "Twitter verification is rate limited"
+            retry_after = _twitterapi_retry_after_seconds(resp)
+            logger.warning("TwitterAPI.io rate limited verification: %s %s", resp.status_code, data)
+            if attempt < TWITTERAPI_IO_RETRIES:
+                await asyncio.sleep(retry_after if retry_after is not None else min(2 * (attempt + 1), 5))
+                continue
+            if retry_after is not None:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Twitter verification is rate limited. Please try again in {int(retry_after) + 1} seconds.",
+                )
+            raise HTTPException(status_code=429, detail=message)
+
+        if resp.status_code >= 400 or data.get("status") == "error":
+            message = data.get("message") or data.get("msg") or "Twitter verification failed"
+            logger.error("TwitterAPI.io error: %s %s", resp.status_code, data)
+            raise HTTPException(status_code=502, detail=message)
+        return data
+
+    raise HTTPException(status_code=502, detail="Twitter verification service is unavailable")
 
 
 def _current_x_username(current: dict) -> str:
@@ -1616,11 +1672,11 @@ def _x_task_target_tweet_id(task: dict) -> str:
     return _extract_x_tweet_id(task.get("verification_target") or task.get("external_url"))
 
 
-def _verify_x_follow(source_username: str, task: dict) -> dict:
+async def _verify_x_follow(source_username: str, task: dict) -> dict:
     target_username = _x_task_target_handle(task)
     if not target_username:
         raise HTTPException(status_code=500, detail="X follow task is missing a target account")
-    data = _twitterapi_get(
+    data = await _twitterapi_get(
         "/twitter/user/check_follow_relationship",
         {
             "source_user_name": source_username,
@@ -1638,7 +1694,7 @@ def _verify_x_follow(source_username: str, task: dict) -> dict:
     }
 
 
-def _verify_x_post(source_username: str, task: dict, user_task: dict) -> dict:
+async def _verify_x_post(source_username: str, task: dict, user_task: dict) -> dict:
     query = (task.get("verification_query") or "").strip()
     if not query:
         target = (task.get("verification_target") or "").strip()
@@ -1659,7 +1715,7 @@ def _verify_x_post(source_username: str, task: dict, user_task: dict) -> dict:
         params = {"query": search_query, "queryType": "Latest"}
         if cursor:
             params["cursor"] = cursor
-        data = _twitterapi_get("/twitter/tweet/advanced_search", params)
+        data = await _twitterapi_get("/twitter/tweet/advanced_search", params)
         tweets = data.get("tweets") or []
         for tweet in tweets:
             author = _normalize_x_handle((tweet.get("author") or {}).get("userName"))
@@ -1686,7 +1742,7 @@ def _verify_x_post(source_username: str, task: dict, user_task: dict) -> dict:
     }
 
 
-def _verify_x_retweet(source_username: str, task: dict) -> dict:
+async def _verify_x_retweet(source_username: str, task: dict) -> dict:
     tweet_id = _x_task_target_tweet_id(task)
     if not tweet_id:
         raise HTTPException(status_code=500, detail="X retweet task is missing a tweet id")
@@ -1698,7 +1754,7 @@ def _verify_x_retweet(source_username: str, task: dict) -> dict:
         params = {"tweetId": tweet_id}
         if cursor:
             params["cursor"] = cursor
-        data = _twitterapi_get("/twitter/tweet/retweeters", params)
+        data = await _twitterapi_get("/twitter/tweet/retweeters", params)
         users = data.get("users") or []
         found = any(_normalize_x_handle(u.get("userName")) == source_username for u in users)
         if found or not data.get("has_next_page") or not data.get("next_cursor"):
@@ -1743,11 +1799,11 @@ async def _ensure_task_verified(task: dict, user_task: Optional[dict], current: 
         raise HTTPException(status_code=400, detail="Link your X account before claiming this task")
 
     if verification_type == "x_follow":
-        result = _verify_x_follow(source_username, task)
+        result = await _verify_x_follow(source_username, task)
     elif verification_type == "x_post":
-        result = _verify_x_post(source_username, task, user_task)
+        result = await _verify_x_post(source_username, task, user_task)
     elif verification_type == "x_retweet":
-        result = _verify_x_retweet(source_username, task)
+        result = await _verify_x_retweet(source_username, task)
     else:
         raise HTTPException(status_code=500, detail="Task verification type is not supported")
 
