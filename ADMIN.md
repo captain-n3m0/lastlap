@@ -76,13 +76,15 @@ Important behavior:
 - `PROFILE UPDATE` tasks should use platform `PROFILE`, external URL `/profile`, and verification type `profile_update`. They only verify after the user saves an actual profile change.
 - `POST SEARCH QUERY` can require multiple TwitterAPI.io calls because results may be paginated.
 - `REPOST TWEET` uses X's repost lookup so quote tweets do not count as reposts.
-- `REPOST TWEET` and `LIKE TWEET` use the linked user's X OAuth2 token. Users who linked X before these scopes were added may need to unlink and reconnect X.
+- `REPOST TWEET` uses `X_BEARER_TOKEN` when configured; otherwise it falls back to the linked user's X OAuth2 token. Users may need to reconnect X only when no app bearer token is configured.
+- `LIKE TWEET` uses the linked user's X OAuth2 token. Users who linked X before these scopes were added may need to unlink and reconnect X.
 - `LIKE TWEET` requires the `like.read` scope.
 
 Backend environment for verification:
 
 ```env
 X_OAUTH_SCOPES=tweet.read users.read like.read offline.access
+X_BEARER_TOKEN=your-x-app-bearer-token
 TWITTERAPI_IO_API_KEY=your-key
 TWITTERAPI_IO_BASE_URL=https://api.twitterapi.io
 TWITTERAPI_IO_TIMEOUT=15
@@ -98,6 +100,7 @@ Troubleshooting:
 - `X account is not linked`: ask the user to connect X from their profile/login flow.
 - `X action was not found`: confirm the target handle/tweet/query is correct and the user performed the action with the linked X account.
 - `Update your profile, then try again`: the user started the profile task but has not saved a profile change since starting it.
+- `X bearer token cannot access repost verification`: confirm `X_BEARER_TOKEN` is current, or remove it and require OAuth2-linked users.
 - `Reconnect your X account with OAuth 2.0`: the user needs to unlink and reconnect X before claiming repost or like tasks.
 - `Reconnect your X account to grant like.read`: the user needs to unlink and reconnect X before claiming like tasks.
 - `Twitter verification is rate limited`: TwitterAPI.io returned HTTP `429`; confirm the active API key and plan, then retry after the indicated wait.

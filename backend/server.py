@@ -63,6 +63,7 @@ X_OAUTH_CLIENT_SECRET = _env_first("X_OAUTH_CLIENT_SECRET", "TWITTER_OAUTH_CLIEN
 X_OAUTH_REDIRECT_URI = _env_first("X_OAUTH_REDIRECT_URI", "TWITTER_OAUTH_REDIRECT_URI", "TWITTER_REDIRECT_URI")
 X_OAUTH_SCOPES = _env_first("X_OAUTH_SCOPES", "TWITTER_OAUTH_SCOPES", default="tweet.read users.read like.read offline.access")
 X_OAUTH_VERSION = _env_first("X_OAUTH_VERSION", "TWITTER_OAUTH_VERSION", default="auto").lower()
+X_BEARER_TOKEN = _env_first("X_BEARER_TOKEN", "TWITTER_BEARER_TOKEN")
 X_CONSUMER_KEY = _env_first("X_CONSUMER_KEY", "X_API_KEY", "TWITTER_CONSUMER_KEY", "TWITTER_API_KEY")
 X_CONSUMER_SECRET = _env_first(
     "X_CONSUMER_SECRET",
@@ -1778,6 +1779,65 @@ async def _x_api_get_json(
     raise HTTPException(status_code=502, detail="X verification service is unavailable")
 
 
+async def _x_app_api_get_json(url: str, params: dict, action_label: str) -> dict:
+    if not X_BEARER_TOKEN:
+        raise HTTPException(status_code=503, detail="X bearer token is not configured")
+    try:
+        resp = await asyncio.to_thread(
+            requests.get,
+            url,
+            headers={"Authorization": f"Bearer {X_BEARER_TOKEN}"},
+            params=params,
+            timeout=15,
+        )
+    except requests.RequestException as exc:
+        logger.error("X API %s request failed: %s", action_label, exc)
+        raise HTTPException(status_code=502, detail="X verification service timed out. Please try again.")
+
+    try:
+        data = resp.json()
+    except ValueError:
+        logger.error("X API returned non-JSON response: %s %s", resp.status_code, resp.text[:500])
+        raise HTTPException(status_code=502, detail="X verification returned an invalid response")
+
+    if resp.status_code == 429:
+        retry_after = _twitterapi_retry_after_seconds(resp)
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=429,
+                detail=f"X verification is rate limited. Please try again in {int(retry_after) + 1} seconds.",
+            )
+        raise HTTPException(status_code=429, detail="X verification is rate limited. Please try again soon.")
+
+    if resp.status_code in {401, 403}:
+        logger.error("X API app authorization failed: %s %s", resp.status_code, data)
+        raise HTTPException(status_code=resp.status_code, detail="X bearer token cannot access repost verification")
+
+    if resp.status_code >= 400:
+        logger.error("X API error: %s %s", resp.status_code, data)
+        raise HTTPException(status_code=502, detail="X verification service is unavailable")
+
+    return data
+
+
+async def _x_reposted_by_get_json(current: dict, tweet_id: str, params: dict) -> dict:
+    url = X_REPOSTED_BY_URL.format(tweet_id=tweet_id)
+    if X_BEARER_TOKEN:
+        try:
+            return await _x_app_api_get_json(url, params, "repost")
+        except HTTPException as exc:
+            if exc.status_code not in {401, 403}:
+                raise
+            logger.warning("X app bearer repost lookup failed; falling back to user OAuth2: %s", exc.detail)
+    return await _x_api_get_json(
+        current,
+        url,
+        params,
+        {"tweet.read", "users.read"},
+        "repost",
+    )
+
+
 def _current_x_username(current: dict) -> str:
     if not current.get("x_id"):
         return ""
@@ -1877,13 +1937,7 @@ async def _verify_x_retweet(source_username: str, task: dict, current: dict) -> 
         }
         if pagination_token:
             params["pagination_token"] = pagination_token
-        data = await _x_api_get_json(
-            current,
-            X_REPOSTED_BY_URL.format(tweet_id=tweet_id),
-            params,
-            {"tweet.read", "users.read"},
-            "repost",
-        )
+        data = await _x_reposted_by_get_json(current, tweet_id, params)
         pages_checked += 1
         for user in data.get("data") or []:
             if str(user.get("id", "")) == str(current.get("x_id", "")):
