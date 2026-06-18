@@ -1770,6 +1770,10 @@ async def _x_api_get_json(
             logger.error("X API authorization failed: %s %s", resp.status_code, data)
             raise HTTPException(status_code=400, detail=f"Reconnect your X account before claiming {action_label} tasks")
 
+        if resp.status_code == 402:
+            logger.error("X API credits depleted: %s", data)
+            raise HTTPException(status_code=402, detail="X API credits are depleted")
+
         if resp.status_code >= 400:
             logger.error("X API error: %s %s", resp.status_code, data)
             raise HTTPException(status_code=502, detail="X verification service is unavailable")
@@ -1812,6 +1816,10 @@ async def _x_app_api_get_json(url: str, params: dict, action_label: str) -> dict
     if resp.status_code in {401, 403}:
         logger.error("X API app authorization failed: %s %s", resp.status_code, data)
         raise HTTPException(status_code=resp.status_code, detail="X bearer token cannot access repost verification")
+
+    if resp.status_code == 402:
+        logger.error("X API app credits depleted: %s", data)
+        raise HTTPException(status_code=402, detail="X API credits are depleted")
 
     if resp.status_code >= 400:
         logger.error("X API error: %s %s", resp.status_code, data)
@@ -1922,6 +1930,40 @@ async def _verify_x_post(source_username: str, task: dict, user_task: dict) -> d
     }
 
 
+async def _verify_x_retweet_with_twitterapi(source_username: str, tweet_id: str) -> dict:
+    cursor = ""
+    pages_checked = 0
+    matched_user = None
+    while pages_checked < TWITTERAPI_IO_MAX_PAGES:
+        params = {"tweetId": tweet_id}
+        if cursor:
+            params["cursor"] = cursor
+        data = await _twitterapi_get("/twitter/tweet/retweeters", params)
+        pages_checked += 1
+        for user in data.get("users") or []:
+            if _normalize_x_handle(user.get("userName")) == source_username:
+                matched_user = {
+                    "x_username": _normalize_x_handle(user.get("userName")),
+                    "x_user_id": str(user.get("id") or user.get("id_str") or ""),
+                }
+                break
+        if matched_user or not data.get("has_next_page") or not data.get("next_cursor"):
+            break
+        cursor = data.get("next_cursor")
+
+    return {
+        "verified": bool(matched_user),
+        "evidence": {
+            "type": "x_retweet",
+            "source_user_name": source_username,
+            "tweet_id": tweet_id,
+            "pages_checked": pages_checked,
+            "verification_source": "twitterapi_retweeters",
+            **(matched_user or {}),
+        },
+    }
+
+
 async def _verify_x_retweet(source_username: str, task: dict, current: dict) -> dict:
     tweet_id = _x_task_target_tweet_id(task)
     if not tweet_id:
@@ -1937,7 +1979,13 @@ async def _verify_x_retweet(source_username: str, task: dict, current: dict) -> 
         }
         if pagination_token:
             params["pagination_token"] = pagination_token
-        data = await _x_reposted_by_get_json(current, tweet_id, params)
+        try:
+            data = await _x_reposted_by_get_json(current, tweet_id, params)
+        except HTTPException as exc:
+            if exc.status_code in {400, 401, 402, 403}:
+                logger.warning("X repost lookup unavailable (%s); falling back to TwitterAPI.io retweeters lookup", exc.detail)
+                return await _verify_x_retweet_with_twitterapi(source_username, tweet_id)
+            raise
         pages_checked += 1
         for user in data.get("data") or []:
             if str(user.get("id", "")) == str(current.get("x_id", "")):
@@ -1959,6 +2007,7 @@ async def _verify_x_retweet(source_username: str, task: dict, current: dict) -> 
             "source_user_id": current.get("x_id"),
             "tweet_id": tweet_id,
             "pages_checked": pages_checked,
+            "verification_source": "x_reposted_by",
             **(matched_user or {}),
         },
     }

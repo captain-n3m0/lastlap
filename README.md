@@ -61,7 +61,7 @@ cp backend/.env.example backend/.env
 #   X_OAUTH_CLIENT_SECRET=<your X OAuth 2.0 client secret>
 #   X_OAUTH_REDIRECT_URI=https://lastlap.fun/oauth/x/callback
 #   X_OAUTH_SCOPES=tweet.read users.read like.read offline.access
-#   TWITTERAPI_IO_API_KEY=<your Twitterapi.io API key> # X follow/post verification
+#   TWITTERAPI_IO_API_KEY=<your Twitterapi.io API key> # X follow/post + repost fallback verification
 #   TWITTERAPI_IO_TIMEOUT=15
 #   TWITTERAPI_IO_MAX_PAGES=5
 #   TWITTERAPI_IO_RETRIES=1
@@ -199,7 +199,7 @@ adjustments, see [ADMIN.md](ADMIN.md).
 - [ ] `RESEND_API_KEY` / `EMAIL_FROM` — required for OTP email delivery
 - [ ] `CORS_ORIGINS` — set to your real domain (not `*`)
 - [ ] `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` or `X_OAUTH_CLIENT_ID` / `X_OAUTH_CLIENT_SECRET`, plus `X_OAUTH_REDIRECT_URI` — required for X login. Set `X_BEARER_TOKEN` for strict repost verification, or use OAuth 2.0-linked users. Likes require OAuth 2.0 with `like.read`.
-- [ ] `TWITTERAPI_IO_API_KEY` — required for verified X follow/post tasks to award LP
+- [ ] `TWITTERAPI_IO_API_KEY` — required for verified X follow/post tasks and repost fallback verification to award LP
 - [ ] MongoDB Atlas IP allowlist — restrict to your server's IP
 
 ---

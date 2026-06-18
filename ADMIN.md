@@ -76,7 +76,7 @@ Important behavior:
 - `PROFILE UPDATE` tasks should use platform `PROFILE`, external URL `/profile`, and verification type `profile_update`. They only verify after the user saves an actual profile change.
 - `POST SEARCH QUERY` can require multiple TwitterAPI.io calls because results may be paginated.
 - `REPOST TWEET` uses X's repost lookup so quote tweets do not count as reposts.
-- `REPOST TWEET` uses `X_BEARER_TOKEN` when configured; otherwise it falls back to the linked user's X OAuth2 token. Users may need to reconnect X only when no app bearer token is configured.
+- `REPOST TWEET` uses `X_BEARER_TOKEN` when configured, then the linked user's X OAuth2 token, then TwitterAPI.io retweeters lookup if X auth or credits are unavailable.
 - `LIKE TWEET` uses the linked user's X OAuth2 token. Users who linked X before these scopes were added may need to unlink and reconnect X.
 - `LIKE TWEET` requires the `like.read` scope.
 
@@ -100,7 +100,7 @@ Troubleshooting:
 - `X account is not linked`: ask the user to connect X from their profile/login flow.
 - `X action was not found`: confirm the target handle/tweet/query is correct and the user performed the action with the linked X account.
 - `Update your profile, then try again`: the user started the profile task but has not saved a profile change since starting it.
-- `X bearer token cannot access repost verification`: confirm `X_BEARER_TOKEN` is current, or remove it and require OAuth2-linked users.
+- `X API credits are depleted`: repost verification falls back to TwitterAPI.io when configured; otherwise add X credits or set `TWITTERAPI_IO_API_KEY`.
 - `Reconnect your X account with OAuth 2.0`: the user needs to unlink and reconnect X before claiming repost or like tasks.
 - `Reconnect your X account to grant like.read`: the user needs to unlink and reconnect X before claiming like tasks.
 - `Twitter verification is rate limited`: TwitterAPI.io returned HTTP `429`; confirm the active API key and plan, then retry after the indicated wait.
@@ -160,7 +160,7 @@ Before launch:
 - Confirm `ADMIN_EMAIL` belongs to the intended owner.
 - Confirm `CORS_ORIGINS` and `FRONTEND_PUBLIC_URL` match the production domain.
 - Add X OAuth callback URLs in the X Developer Portal.
-- Set `TWITTERAPI_IO_API_KEY` if X follow/post verification is enabled.
+- Set `TWITTERAPI_IO_API_KEY` if X follow/post verification or repost fallback verification is enabled.
 - Restart the backend after environment changes.
 
 After launch:
