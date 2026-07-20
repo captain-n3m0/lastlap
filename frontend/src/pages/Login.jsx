@@ -75,8 +75,8 @@ function CrossedFlags({ size = 64 }) {
 function SkullEmblem() {
   return (
     <img
-      src="/skull-emblem.png"
-      alt="LastLap skull emblem"
+      src="/crossed-flags.png"
+      alt="LastLap checkered flags"
       width="120"
       height="120"
       className="object-contain drop-shadow-[0_0_24px_rgba(139,92,246,0.55)] float-drift"
@@ -229,7 +229,12 @@ export default function Login() {
 
                 <div className="mt-4 flex items-center justify-center gap-2 font-mono-crt text-[11px] text-[var(--muted-2)] text-center">
                   <Lock size={11} />
-                  <span>We never post without permission. Your data is safe.</span>
+                  <span>We never ask for seed phrases or private keys.</span>
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-3 font-pixel text-[9px] tracking-widest text-[var(--muted)]">
+                  <Link to="/privacy" className="hover:text-[var(--purple-bright)] transition">PRIVACY</Link>
+                  <Link to="/terms" className="hover:text-[var(--purple-bright)] transition">TERMS</Link>
+                  <Link to="/contact" className="hover:text-[var(--purple-bright)] transition">CONTACT</Link>
                 </div>
               </div>
               <CyberFrameStroke />

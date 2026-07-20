@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="fade-in-up stagger-1">
           <div className="flex items-center gap-3 font-brush text-4xl mb-3">
-            <img src="/skull-emblem.png" alt="" className="w-11 h-11 object-contain" />
+            <img src="/crossed-flags.png" alt="" className="w-11 h-11 object-contain" />
             <span><span className="text-white">LAST</span><span className="text-[var(--purple)]">LAP</span></span>
           </div>
           <div className="font-pixel text-[9px] tracking-widest text-[var(--muted)] leading-relaxed space-y-1">
@@ -26,6 +26,9 @@ export default function Footer() {
           <div className="font-pixel text-[10px] tracking-widest text-white mb-4">EXPLORE</div>
           <ul className="space-y-2 font-pixel text-[10px] tracking-widest text-[var(--muted)]">
             <li><Link to="/about" className="hover:text-[var(--purple-bright)] transition">ABOUT</Link></li>
+            <li><Link to="/privacy" className="hover:text-[var(--purple-bright)] transition">PRIVACY</Link></li>
+            <li><Link to="/terms" className="hover:text-[var(--purple-bright)] transition">TERMS</Link></li>
+            <li><Link to="/contact" className="hover:text-[var(--purple-bright)] transition">CONTACT</Link></li>
             <li><Link to="/leaderboard" className="hover:text-[var(--purple-bright)] transition">LEADERBOARD</Link></li>
             <li><Link to="/" className="hover:text-[var(--purple-bright)] transition">ENTER LASTLAP</Link></li>
           </ul>

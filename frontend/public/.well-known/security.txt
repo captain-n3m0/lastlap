@@ -1,0 +1,4 @@
+Contact: https://lastlap.fun/contact
+Preferred-Languages: en
+Canonical: https://lastlap.fun/.well-known/security.txt
+Expires: 2027-07-20T00:00:00Z

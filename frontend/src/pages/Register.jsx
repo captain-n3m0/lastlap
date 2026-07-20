@@ -122,6 +122,14 @@ export default function Register() {
             <div className="mt-2">
               <WalletButton variant="signin" />
             </div>
+            <div className="mt-3 font-mono-crt text-[12px] text-[var(--muted-2)] text-center">
+              LastLap never asks for seed phrases or private keys.
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-3 font-pixel text-[9px] tracking-widest text-[var(--muted)]">
+              <Link to="/privacy" className="hover:text-[var(--purple-bright)] transition">PRIVACY</Link>
+              <Link to="/terms" className="hover:text-[var(--purple-bright)] transition">TERMS</Link>
+              <Link to="/contact" className="hover:text-[var(--purple-bright)] transition">CONTACT</Link>
+            </div>
 
             <div className="mt-6 font-pixel text-[10px] tracking-widest text-[var(--muted)] text-center">
               ALREADY A RIDER? <Link to="/login" className="text-[var(--purple-bright)]" data-testid="link-login">ENTER THE PIT</Link>

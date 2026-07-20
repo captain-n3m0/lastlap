@@ -414,11 +414,11 @@ export default function Dashboard() {
           </div>
 
           <div className="font-mono-crt text-[15px] text-[var(--muted)] mb-3">
-            EARN BONUS LAP POINTS FOR EVERY VERIFIED RIDER WHO JOINS THROUGH YOUR LINK.
+            INVITE VERIFIED RIDERS TO JOIN YOUR CREW THROUGH YOUR LINK.
           </div>
 
           <a
-            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Join me on LastLap and earn Lap Points! " + (refs?.referral_link || ""))}`}
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Join my LastLap crew: " + (refs?.referral_link || ""))}`}
             target="_blank" rel="noreferrer"
             className="btn-primary-ll w-full flex items-center justify-center gap-2 py-3 cta-pulse"
             data-testid="share-x"

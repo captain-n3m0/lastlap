@@ -10,6 +10,7 @@ import About from "./pages/About";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import XOAuthCallback from "./pages/XOAuthCallback";
+import TrustPage from "./pages/Trust";
 import LoadingScreen from "./components/LoadingScreen";
 import CustomCursor from "./components/CustomCursor";
 import ScrollAnimations from "./components/ScrollAnimations";
@@ -49,6 +50,9 @@ export default function App() {
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/admin" element={<Protected><AdminDashboard /></Protected>} />
             <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<TrustPage page="privacy" />} />
+            <Route path="/terms" element={<TrustPage page="terms" />} />
+            <Route path="/contact" element={<TrustPage page="contact" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

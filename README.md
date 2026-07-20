@@ -127,19 +127,46 @@ This is the easiest setup: frontend and backend live on the same domain.
    cd /var/www/lastlap/frontend
    yarn install && yarn build
    ```
-6. **Configure Nginx** — create `/etc/nginx/sites-available/lastlap`:
+6. **Configure Nginx** — create `/etc/nginx/sites-available/lastlap`.
+   Use one canonical host, real static files for crawler endpoints, and basic
+   security headers:
    ```nginx
    server {
        listen 80;
        server_name yourdomain.com www.yourdomain.com;
+       return 301 https://yourdomain.com$request_uri;
+   }
+
+   server {
+       listen 443 ssl http2;
+       server_name www.yourdomain.com;
+
+       ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+       return 301 https://yourdomain.com$request_uri;
+   }
+
+   server {
+       listen 443 ssl http2;
+       server_name yourdomain.com;
+
+       ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 
        # Frontend (static files)
        root /var/www/lastlap/frontend/build;
        index index.html;
 
-       location / {
-           try_files $uri /index.html;
-       }
+       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+       add_header X-Content-Type-Options "nosniff" always;
+       add_header X-Frame-Options "DENY" always;
+       add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+       add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+       location = /robots.txt { try_files $uri =404; }
+       location = /sitemap.xml { try_files $uri =404; }
+       location = /.well-known/security.txt { try_files $uri =404; }
 
        # Backend API — proxied to FastAPI
        location /api/ {
@@ -149,6 +176,10 @@ This is the easiest setup: frontend and backend live on the same domain.
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
        }
+
+       location / {
+           try_files $uri /index.html;
+       }
    }
    ```
    Then enable and reload:
@@ -157,11 +188,13 @@ This is the easiest setup: frontend and backend live on the same domain.
    nginx -t && systemctl reload nginx
    ```
 7. **Point your domain** to the VPS IP in Hostinger's DNS panel (A record `@` → server IP).
-8. **Add free HTTPS:**
+8. **Add free HTTPS** if certificates are not already installed:
    ```bash
    apt install -y certbot python3-certbot-nginx
    certbot --nginx -d yourdomain.com -d www.yourdomain.com
    ```
+   After Certbot finishes, make sure the final Nginx config still redirects
+   `www` to the canonical host and keeps the headers above.
 
 Done — visit `https://yourdomain.com` and you're live.
 
